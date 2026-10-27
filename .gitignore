@@ -5,6 +5,7 @@
 *.iml
 local.properties
 *.jks
+!signing/test-debug.jks
 *.keystore
 *.p12
 *.pfx

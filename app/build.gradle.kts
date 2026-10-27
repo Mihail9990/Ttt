@@ -3,11 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Every new GitHub Actions run gets a larger versionCode.
-// Local builds still work with the fallback version number.
+// GitHub run numbers increase for each new build.
 val ciVersionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
-val signingKeystore = file("signing.keystore")
-val signingPassword = System.getenv("APP_KEYSTORE_PASSWORD")
 
 android {
     namespace = "com.example.apkstarter"
@@ -21,33 +18,25 @@ android {
         versionName = "1.0.$ciVersionCode"
     }
 
+    // The public TEST key is tracked in this private repository on purpose.
+    // Never use this key to sign production or publicly distributed apps.
     signingConfigs {
-        if (signingKeystore.isFile) {
-            create("persistent") {
-                val password = requireNotNull(signingPassword) {
-                    "APP_KEYSTORE_PASSWORD is required when signing.keystore exists"
-                }
-                storeFile = signingKeystore
-                storePassword = password
-                // Matches the keytool command in docs/SIGNING_ON_ANDROID.md.
-                keyAlias = "apkbuilder"
-                keyPassword = password
-            }
+        create("stableTest") {
+            storeFile = rootProject.file("signing/test-debug.jks")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
     buildTypes {
         getByName("debug") {
-            if (signingKeystore.isFile) {
-                // Use the same permanent certificate across subsequent APKs.
-                signingConfig = signingConfigs.getByName("persistent")
-            }
+            // This certificate stays the same across GitHub Actions runs.
+            signingConfig = signingConfigs.getByName("stableTest")
         }
         getByName("release") {
             isMinifyEnabled = false
-            if (signingKeystore.isFile) {
-                signingConfig = signingConfigs.getByName("persistent")
-            }
+            // No insecure release APK: the production key will be separate.
         }
     }
 
