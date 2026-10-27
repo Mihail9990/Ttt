@@ -72,7 +72,15 @@ jobs:
             exit 1
           fi
 
+      - name: Cache Android export template
+        id: templates-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.5.2.stable/android_debug.apk
+          key: godot-4.5.2-android-debug-v1
+
       - name: Download Android export template
+        if: steps.templates-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           set -euo pipefail
