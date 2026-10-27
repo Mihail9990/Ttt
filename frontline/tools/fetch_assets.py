@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1] / "assets"
 BASE = f"https://raw.githubusercontent.com/cktang88/3d-fps/{UPSTREAM_REV}/"
 ASSETS = [
     ["public/assets/models/fp/m4a1.glb", "models/first_person_m4a1.glb",1497044],
+    ["public/assets/models/fp/arms_basecolor.webp", "models/arms_basecolor.webp",136406],
+    ["public/assets/models/fp/arms_normal.webp", "models/arms_normal.webp",278326],
     ["public/assets/models/characters/soldier_tac.glb", "models/soldier_tactical.glb",4532132],
     ["public/assets/models/props/old_military_crate/old_military_crate.glb", "models/crate.glb",375004],
     ["public/assets/models/props/concrete_road_barrier/concrete_road_barrier.glb", "models/road_barrier.glb",447480],
