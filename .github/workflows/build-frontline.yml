@@ -1,0 +1,133 @@
+name: Build FRONTLINE Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontline/**'
+      - '.github/workflows/build-frontline.yml'
+      - 'signing/test-debug.jks'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-game:
+    name: Validate Godot and export Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    env:
+      GODOT_VERSION: '4.5.2'
+      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/signing/test-debug.jks
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK command-line tools
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK dependencies
+        run: sdkmanager "platform-tools" "build-tools;35.0.1" "platforms;android-35"
+
+      - name: Download Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fL --retry 4 --retry-delay 3 -o /tmp/godot-editor.zip "$URL"
+          unzip -q /tmp/godot-editor.zip -d /tmp/godot-editor
+          sudo install -m 755 "/tmp/godot-editor/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          godot --headless --version
+
+      - name: Validate GDScript imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path frontline --editor --quit > /tmp/godot-import.log 2>&1 || { cat /tmp/godot-import.log; exit 1; }
+          cat /tmp/godot-import.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Failed loading resource' /tmp/godot-import.log; then
+            echo "::error::GDScript parse/import errors above"
+            exit 1
+          fi
+
+      - name: Headless mission smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 140s godot --headless --path frontline --script res://tests/smoke_test.gd > /tmp/godot-test.log 2>&1 || { cat /tmp/godot-test.log; exit 1; }
+          cat /tmp/godot-test.log
+          grep -q "SMOKE_TEST_OK" /tmp/godot-test.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Invalid call|Invalid get index' /tmp/godot-test.log; then
+            exit 1
+          fi
+
+      - name: Download Android export template
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -fL --retry 4 --retry-delay 3 -o /tmp/godot-templates.tpz "$URL"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -p /tmp/godot-templates.tpz templates/android_debug.apk > "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_debug.apk"
+          test -s "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_debug.apk"
+          rm -f /tmp/godot-templates.tpz
+          echo "Godot 4 Android debug export template installed."
+
+      - name: Configure editor and game version
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.5.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("frontline/export_presets.cfg")
+          s=p.read_text()
+          s=s.replace('version/code=1',f'version/code={int(__import__("os").environ["GITHUB_RUN_NUMBER"])}')
+          s=s.replace('version/name="0.1.0"',f'version/name="0.1.{__import__("os").environ["GITHUB_RUN_NUMBER"]}"')
+          p.write_text(s)
+          PY
+          echo "Godot Android SDK: $ANDROID_HOME"
+          echo "Godot Java SDK: $JAVA_HOME"
+
+      - name: Export ARM64 Android APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          APK="dist/Frontline-Conflict-v0.1.${GITHUB_RUN_NUMBER}.apk"
+          godot --headless --path frontline --export-debug "Android" "$GITHUB_WORKSPACE/$APK" 2>&1 | tee /tmp/godot-export.log
+          test -s "$APK"
+
+      - name: Verify signed APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="dist/Frontline-Conflict-v0.1.${GITHUB_RUN_NUMBER}.apk"
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify "$APK"
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --print-certs "$APK"
+
+      - name: Upload the installable game
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frontline-Conflict-Android-v0.1.${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
