@@ -1,13 +1,34 @@
 # FRONTLINE: CONFLICT (Android)
 
-Two-mission **offline first-person shooter** prototype for Android. Fully separate from the original Kotlin APK Starter in this repository.
+Two-mission **offline first-person shooter** playable prototype for Android. Fully separate from the original Kotlin APK Starter in this repository.
+
+## Version 0.2 — substantial graphics and touch control upgrade
+
+- Uses actual military character and first-person arm/gun models, not only primitive box meshes.
+- Loads CC0 PBR albedo/normal/roughness textures for asphalt, concrete, brick,
+  ground, metal and paving stones; realistic 3D cover props, wrecked car, helicopter and HDR sunset.
+- Keeps collision meshes inexpensive; imported art is decorative while invisible
+  colliders drive movement and hit detection.
+- Licensed materials are fetched and pinned from
+  [cktang88/3d-fps](https://github.com/cktang88/3d-fps) during GitHub Actions,
+  cached, imported and packed into the APK. The assets are NOT downloaded by the phone during gameplay.
+- See [CREDITS.txt](CREDITS.txt) for the sources, CC BY 4.0 author attribution
+  and CC0 licenses. Touch input and audio work fully offline.
+- Fixes the issue where touching anywhere fires: touch-to-mouse emulation is
+  disabled and only the orange FIRE circle triggers fire.
+- Camera look is on the right side outside buttons; drag the left side for movement.
+- Adds dedicated pause, reload, sprint and aim control targeting.
+
+**Note:** Godot import smoke tests and signed APK build are necessary but
+cannot prove the device's framerate or visuals. Please test on your own Android
+phone; performance may vary. The cinematic poster is a concept, not a gameplay screenshot.
 
 ## Gameplay
 
 - **Mission 1 — ПРОРЫВ:** assault the mountain communications outpost, defeat the 6 defenders, then reach the active radio beacon.
 - **Mission 2 — ЭВАКУАЦИЯ:** fight through the ruined city, survive two waves of opponents (4 + 5), then reach the extraction beacon beneath the helicopter.
 - 3D first-person movement, mouse/touch aiming, rapid-fire assault rifle, 30-round magazine and reload, recoil, sight zoom, damage, death, enemy AI, line-of-sight fire, HUD radar.
-- Authored procedural environment: valley terrain, 150+ conifers, concrete base, radio towers, crates, roadblocks, armored vehicles, urban ruins and rooftop helicopter.
+- Environment: PBR assets layered over authored procedural valley terrain, 150+ conifers, concrete base, radio towers, crates, roadblocks, armored vehicles, urban ruins and rooftop helicopter.
 - Generated original shot, impact, reload and completion SFX. No third-party assets or server calls.
 - Godot **4.5.2**, **GL Compatibility** for broader midrange Android support.
 
@@ -52,4 +73,4 @@ The atmospheric poster is a **concept illustration**, not an in-engine render. T
 - `tests/smoke_test.gd`: Godot headless level generator smoke test
 - `export_presets.cfg`: Android export configuration
 
-This prototype is not connected with, endorsed by, or derived from EA/DICE/Battlefield.
+Attributions are in [CREDITS.txt](CREDITS.txt). This prototype is not connected with, endorsed by, or derived from EA/DICE/Battlefield.

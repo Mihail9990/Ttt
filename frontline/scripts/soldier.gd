@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const Assets = preload("res://scripts/assets.gd")
 ## Lightweight enemy AI: approach, strafe, line-of-sight fire, take damage, collapse.
 
 var game: Node3D
@@ -66,6 +67,15 @@ func _build_character() -> void:
     var plated := _mat("#34433d")
     mannequin = Node3D.new()
     add_child(mannequin)
+    # Open-source rigged military character; fallback procedural soldier below.
+    var soldier_model: Node3D = Assets.add_ground_model(
+        mannequin, "soldier_tactical", Vector3(0, -1.10, 0), 1.93, PI)
+    if soldier_model != null:
+        # Separate muzzle flash stays fixed to enemy's local + combat direction.
+        _box(Vector3(0.04, -0.12, -0.58), Vector3(0.11, 0.12, 0.85), black, mannequin)
+        weapon_flash = _sphere(Vector3(0.04, -0.10, -1.15), 0.12, 0.24, _mat("#ffd996"), mannequin)
+        weapon_flash.visible = false
+        return
     _box(Vector3(0, 0.09, 0.04), Vector3(0.68, 0.78, 0.36), olive, mannequin)
     _box(Vector3(0, 0.09, -0.18), Vector3(0.58, 0.61, 0.17), plated, mannequin)
     for x in [-0.18, 0.18]:
@@ -122,7 +132,7 @@ func _physics_process(dt: float) -> void:
         velocity.y = -0.2
     move_and_slide()
     if distance < 26.0 and cooldown <= 0:
-        cooldown = rng.randf_range(0.85, 1.55)
+        cooldown = rng.randf_range(1.1, 1.8)
         _attack(player, distance)
 
 func _attack(player: CharacterBody3D, distance: float) -> void:
@@ -136,7 +146,7 @@ func _attack(player: CharacterBody3D, distance: float) -> void:
     shoot_flash = 0.16
     game.sound.play_enemy_shot()
     if rng.randf() < 0.53 + clampf((18.0 - distance) * 0.014, 0, 0.17):
-        player.take_damage(rng.randf_range(6, 12))
+        player.take_damage(rng.randf_range(3.5, 7.5))
 
 func take_damage(amount: float) -> bool:
     if dead:

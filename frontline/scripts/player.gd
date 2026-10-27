@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const Assets = preload("res://scripts/assets.gd")
 ## First-person controller, touch/keyboard support, hitscan combat and animated weapon.
 
 var game: Node3D
@@ -74,31 +75,35 @@ func _build_weapon() -> void:
     gun = Node3D.new()
     gun.position = Vector3(0.36, -0.30, -0.66)
     camera.add_child(gun)
-    var graphite := _mat("#20292e", 0.68, 0.41)
-    var steel := _mat("#3e4b50", 0.8, 0.28)
-    var polymer := _mat("#303a39", 0.22, 0.72)
-    var bronze := _mat("#7d7364", 0.55, 0.49)
-    var optic := _mat("#111d22", 0.2, 0.12)
-    var fabric := _mat("#806f59", 0.0, 0.98)
-    # Full depth silhouette of an original tactical rifle, not a replica of a brand.
-    _part(gun, Vector3(0, -0.03, -0.28), Vector3(0.23, 0.23, 0.72), graphite)
-    _part(gun, Vector3(0, 0.07, -0.69), Vector3(0.20, 0.17, 0.63), steel)
-    _part(gun, Vector3(0, 0.008, -1.04), Vector3(0.095, 0.095, 0.68), steel, true)
-    _part(gun, Vector3(0, -0.03, -1.42), Vector3(0.16, 0.14, 0.13), graphite, true)
-    _part(gun, Vector3(0, 0.06, -0.52), Vector3(0.26, 0.025, 0.58), graphite)
-    _part(gun, Vector3(0, -0.21, -0.13), Vector3(0.16, 0.42, 0.17), polymer)
-    _part(gun, Vector3(0, -0.24, -0.42), Vector3(0.18, 0.40, 0.19), bronze)
-    _part(gun, Vector3(0, 0.22, -0.23), Vector3(0.19, 0.16, 0.26), graphite)
-    _part(gun, Vector3(0, 0.31, -0.26), Vector3(0.10, 0.09, 0.2), optic, true)
-    _part(gun, Vector3(-0.19, -0.17, 0.16), Vector3(0.17, 0.12, 0.43), polymer)
-    _part(gun, Vector3(0, 0.20, -1.09), Vector3(0.065, 0.19, 0.05), graphite)
-    # Tactical rails, handguard cuts and accent insets.
-    for i in range(5):
-        _part(gun, Vector3(0.115, 0.10, -0.43 - i * 0.1), Vector3(0.018, 0.025, 0.054), bronze)
-        _part(gun, Vector3(-0.115, 0.10, -0.43 - i * 0.1), Vector3(0.018, 0.025, 0.054), bronze)
-    # First-person gloves.
-    _part(gun, Vector3(0.13, -0.25, -0.50), Vector3(0.22, 0.20, 0.30), fabric)
-    _part(gun, Vector3(-0.08, -0.33, 0.13), Vector3(0.22, 0.22, 0.32), fabric)
+    # Prefer a licensed detailed M4A1 + arms viewmodel from the open asset pipeline.
+    # Keep original generated weapon as an offline fallback if model import fails.
+    var imported_model: Node3D = Assets.add_first_person_weapon(gun)
+    if imported_model == null:
+        var graphite := _mat("#20292e", 0.68, 0.41)
+        var steel := _mat("#3e4b50", 0.8, 0.28)
+        var polymer := _mat("#303a39", 0.22, 0.72)
+        var bronze := _mat("#7d7364", 0.55, 0.49)
+        var optic := _mat("#111d22", 0.2, 0.12)
+        var fabric := _mat("#806f59", 0.0, 0.98)
+        # Full depth silhouette of an original tactical rifle, not a replica of a brand.
+        _part(gun, Vector3(0, -0.03, -0.28), Vector3(0.23, 0.23, 0.72), graphite)
+        _part(gun, Vector3(0, 0.07, -0.69), Vector3(0.20, 0.17, 0.63), steel)
+        _part(gun, Vector3(0, 0.008, -1.04), Vector3(0.095, 0.095, 0.68), steel, true)
+        _part(gun, Vector3(0, -0.03, -1.42), Vector3(0.16, 0.14, 0.13), graphite, true)
+        _part(gun, Vector3(0, 0.06, -0.52), Vector3(0.26, 0.025, 0.58), graphite)
+        _part(gun, Vector3(0, -0.21, -0.13), Vector3(0.16, 0.42, 0.17), polymer)
+        _part(gun, Vector3(0, -0.24, -0.42), Vector3(0.18, 0.40, 0.19), bronze)
+        _part(gun, Vector3(0, 0.22, -0.23), Vector3(0.19, 0.16, 0.26), graphite)
+        _part(gun, Vector3(0, 0.31, -0.26), Vector3(0.10, 0.09, 0.2), optic, true)
+        _part(gun, Vector3(-0.19, -0.17, 0.16), Vector3(0.17, 0.12, 0.43), polymer)
+        _part(gun, Vector3(0, 0.20, -1.09), Vector3(0.065, 0.19, 0.05), graphite)
+        # Tactical rails, handguard cuts and accent insets.
+        for i in range(5):
+            _part(gun, Vector3(0.115, 0.10, -0.43 - i * 0.1), Vector3(0.018, 0.025, 0.054), bronze)
+            _part(gun, Vector3(-0.115, 0.10, -0.43 - i * 0.1), Vector3(0.018, 0.025, 0.054), bronze)
+        # First-person gloves.
+        _part(gun, Vector3(0.13, -0.25, -0.50), Vector3(0.22, 0.20, 0.30), fabric)
+        _part(gun, Vector3(-0.08, -0.33, 0.13), Vector3(0.22, 0.22, 0.32), fabric)
     muzzle = MeshInstance3D.new()
     var flash_mesh := SphereMesh.new()
     flash_mesh.radius = 0.16
@@ -161,14 +166,14 @@ func _process(dt: float) -> void:
         reload_remaining -= dt
         if reload_remaining <= 0:
             finish_reload()
-    ads_held = game.hud.ads_held or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+    ads_held = game.hud.ads_held or (not OS.has_feature("mobile") and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT))
     var target_fov := 52.0 if ads_held else 77.0
     camera.fov = lerpf(camera.fov, target_fov, minf(1.0, dt * 11.0))
     var bob := sin(step_clock * 1.8) * 0.013 * current_bob
     var gun_offset := Vector3(0.36, -0.30, -0.66) if not ads_held else Vector3(0.0, -0.27, -0.55)
     gun.position = gun.position.lerp(gun_offset + Vector3(bob, absf(bob) * 0.4, recoil_amount * 0.13), minf(1.0, dt * 14.0))
     muzzle.visible = shot_cooldown > 0.07 and shot_cooldown < 0.12
-    if game.hud.fire_held or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+    if game.hud.fire_held or (not OS.has_feature("mobile") and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
         shoot()
     if ammo == 0 and not reloading:
         reload()

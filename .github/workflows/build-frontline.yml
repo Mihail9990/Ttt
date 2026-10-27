@@ -50,6 +50,15 @@ jobs:
           sudo install -m 755 "/tmp/godot-editor/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
           godot --headless --version
 
+      - name: Cache licensed 3D models and PBR textures
+        uses: actions/cache@v4
+        with:
+          path: frontline/assets
+          key: frontline-3d-art-130ac2a5c856-v1
+
+      - name: Retrieve open-source models and textures
+        run: python3 frontline/tools/fetch_assets.py
+
       - name: Validate GDScript imports
         shell: bash
         run: |
@@ -61,7 +70,7 @@ jobs:
             exit 1
           fi
 
-      - name: Headless mission smoke test
+      - name: Headless missions + touch input + imported art smoke test
         shell: bash
         run: |
           set -euo pipefail

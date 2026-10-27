@@ -33,6 +33,9 @@ func _draw() -> void:
     if not is_instance_valid(hud) or not is_instance_valid(hud.game):
         return
     var state: int = hud.game.state
+    if hud.show_credits:
+        _draw_credits()
+        return
     if state == 0:
         _draw_menu()
     elif state == 1:
@@ -76,7 +79,8 @@ func _draw_menu() -> void:
     _panel(423, 523, 432, 91, Color("#b86c2b"), Color("#f8ba7d"))
     _text("НАЧАТЬ ОПЕРАЦИЮ", 469, 578, 29, WHITE)
     _text("ANDROID  •  3D  •  ОФЛАЙН", 87, 666, 18, Color("#809ba6"))
-    _text("Версия прототипа 0.1  /  управление двумя пальцами", 691, 666, 17, MUTED)
+    _text("Версия 0.2 · управление двумя пальцами · проверка на Android", 642, 666, 17, MUTED)
+    _text("ИСТОЧНИКИ МОДЕЛЕЙ / ЛИЦЕНЗИИ", 642, 694, 16, GOLD)
 
 func _draw_game() -> void:
     draw_rect(_rect(0, 0, 1280, 92), Color(0.017, 0.031, 0.046, 0.64))
@@ -186,3 +190,18 @@ func _draw_end(state: int) -> void:
     _text("УБИЙСТВ: %d    /    ВРЕМЯ: %02d:%02d" % [hud.game.player.total_kills, int(hud.game.mission_time / 60), int(hud.game.mission_time) % 60], 222, 424, 23, WHITE)
     _panel(311, 477, 654, 69, Color("#ab642d"), GOLD)
     _text(action, 359, 522, 27, WHITE)
+
+func _draw_credits() -> void:
+    _draw_backdrop()
+    _panel(111, 69, 1058, 589, Color("#0b1a21"), GOLD)
+    _text("3D-МОДЕЛИ И АВТОРСКИЕ ПРАВА", 156, 128, 36, WHITE)
+    _text("FRONTLINE: CONFLICT — материалы сторонних художников", 156, 171, 22, GOLD)
+    _text("Модель бойца: DanlyVostok (Military Tactical Suit) — CC BY 4.0", 156, 229, 20, WHITE)
+    _text("M4A1 и руки: Firewarden, bumstrum, ccransh — CC BY 4.0", 156, 272, 20, WHITE)
+    _text("Вертолёт: helijah; повреждённый автомобиль: alexdelker — CC BY 4.0", 156, 315, 20, WHITE)
+    _text("Окружение: Poly Haven — CC0; PBR-текстуры: ambientCG — CC0", 156, 358, 20, WHITE)
+    _text("Модели адаптированы для Godot и мобильного устройства.", 156, 406, 20, MUTED)
+    _text("Подробные ссылки и лицензии: frontline/CREDITS.txt в репозитории", 156, 449, 18, MUTED)
+    _text("CC BY 4.0: creativecommons.org/licenses/by/4.0/", 156, 490, 19, GREEN)
+    _panel(401, 547, 480, 71, Color("#a96630"), GOLD)
+    _text("ВЕРНУТЬСЯ В МЕНЮ", 454, 593, 25, WHITE)

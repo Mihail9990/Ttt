@@ -1,4 +1,5 @@
 extends Node3D
+const Assets = preload("res://scripts/assets.gd")
 ## Two carefully laid-out battlefields made from PBR primitives and procedural textures.
 ## Optimized for Godot 4 GLES3 compatibility and entry-level Android GPUs.
 
@@ -71,6 +72,23 @@ func _material(color: Color, metallic: float = 0.0, roughness: float = 0.8, emis
         mat.emission_energy_multiplier = emissive
     return mat
 
+func _pbr(folder: String, tint: Color, tile: float = 0.22, metal: float = 0.0) -> StandardMaterial3D:
+    var mat := _material(tint, metal, 0.9)
+    var prefix := "res://assets/textures/" + folder + "/"
+    if ResourceLoader.exists(prefix + "Color.webp"):
+        mat.albedo_texture = load(prefix + "Color.webp")
+        mat.uv1_triplanar = true
+        mat.uv1_scale = Vector3(tile, tile, tile)
+        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+        if ResourceLoader.exists(prefix + "NormalGL.webp"):
+            mat.normal_enabled = true
+            mat.normal_texture = load(prefix + "NormalGL.webp")
+            mat.normal_scale = 0.75
+        if ResourceLoader.exists(prefix + "Roughness.webp"):
+            mat.roughness_texture = load(prefix + "Roughness.webp")
+            mat.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+    return mat
+
 func _materials() -> void:
     palette["soil"] = _material(Color("#685f52"), 0.0, 0.95, 0.0, 21)
     palette["road"] = _material(Color("#383d40"), 0.0, 0.96, 0.0, 33)
@@ -88,6 +106,16 @@ func _materials() -> void:
     palette["lamp"] = _material(Color("#ffd49b"), 0.0, 0.38, 3.0)
     palette["yellow"] = _material(Color("#d3a857"), 0.25, 0.6)
     palette["smoke"] = _material(Color("#343a3b"))
+    # Genuine CC0 ambientCG PBR surfaces; original procedural materials remain as fallback.
+    palette["soil"] = _pbr("Ground110", Color("#b8b3a7"), 0.18)
+    palette["sand"] = _pbr("Ground110", Color("#d5bda0"), 0.19)
+    palette["road"] = _pbr("Asphalt031", Color("#a5a7aa"), 0.23)
+    palette["concrete"] = _pbr("Concrete034", Color("#c8c1b3"), 0.27)
+    palette["wall"] = _pbr("Bricks097", Color("#adacaa"), 0.24)
+    palette["rock"] = _pbr("PavingStones138", Color("#777c77"), 0.22)
+    palette["metal"] = _pbr("Metal046B", Color("#c0c1bd"), 0.31, 0.75)
+    palette["facade"] = _pbr("Concrete034", Color("#e1ded6"), 0.24)
+
 
 func _environment(index: int) -> void:
     var world_environment := WorldEnvironment.new()
@@ -108,19 +136,25 @@ func _environment(index: int) -> void:
         procedural.ground_horizon_color = Color("#aca39a")
         env.ambient_light_color = Color("#c0c6cf")
     sky.sky_material = procedural
+    var panorama_path := "res://assets/textures/sunset.hdr"
+    if ResourceLoader.exists(panorama_path):
+        var pano := PanoramaSkyMaterial.new()
+        pano.panorama = load(panorama_path)
+        sky.sky_material = pano
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_energy = 0.48
+    env.ambient_light_energy = 0.35
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    env.tonemap_exposure = 1.06
     env.fog_enabled = true
-    env.fog_density = 0.009 if index == 0 else 0.012
+    env.fog_density = 0.005 if index == 0 else 0.006
     env.fog_sun_scatter = 0.33
     world_environment.environment = env
     add_child(world_environment)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-35, -55 if index == 0 else 34, 0)
     sun.light_color = Color("#ffe2bb")
-    sun.light_energy = 1.25
+    sun.light_energy = 1.6
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 70.0
     add_child(sun)
@@ -232,6 +266,11 @@ func _rock(pos: Vector3, sz: Vector3) -> void:
         _box(pos + Vector3(0, -1.1, 0), Vector3(sz.x * 0.75, sz.y * 0.6, sz.z * 0.72), palette["rock"], true).visible = false
 
 func _crate(pos: Vector3, sz: float = 1.0) -> void:
+    var crate_visual: Node3D = Assets.add_ground_model(
+        self, "crate", pos - Vector3(0, sz * 0.5, 0), sz, rng.randf_range(-PI, PI))
+    if crate_visual != null:
+        _box(pos, Vector3(sz * 0.88, sz, sz * 0.88), palette["dark"], true).visible = false
+        return
     _box(pos, Vector3(sz, sz, sz), palette["rust"], true)
     for y in [-0.32, 0.32]:
         _box(pos + Vector3(0, y * sz, sz * 0.51), Vector3(sz, 0.06, 0.045), palette["metal"])
@@ -245,12 +284,20 @@ func _sandbags(center: Vector3, length: int = 6) -> void:
             _ball(Vector3(px + layer * 0.15, 0.24 + layer * 0.43, center.z), Vector3(1.3, 0.35, 0.7), palette["sand"])
 
 func _building(center: Vector3, width: float, depth: float, height: float, ruined: bool = false) -> void:
-    var mat: Material = palette["wall"] if ruined else palette["concrete"]
+    var mat: Material = palette["wall"] if ruined else palette["facade"]
     _box(center + Vector3(0, height * 0.5, 0), Vector3(width, height, depth), mat, true)
     _box(center + Vector3(0, height + 0.18, 0), Vector3(width + 0.36, 0.35, depth + 0.36), palette["rock"])
     var floors: int = int(floor(height / 3.2))
     for f in floors:
         var y: float = center.y + f * 3.1 + 2.05
+        # Architectural relief: heavy floor bands, deep window sills and balcony edges.
+        for side in [-1.0, 1.0]:
+            _box(center + Vector3(0, y - center.y - 1.23, side * (depth * 0.5 + 0.18)),
+                Vector3(width + 0.2, 0.16, 0.38), palette["concrete"])
+        for side in [-1.0, 1.0]:
+            _box(center + Vector3(side * (width * 0.5 + 0.13), y - center.y - 1.23, 0),
+                Vector3(0.30, 0.14, depth + 0.2), palette["concrete"])
+
         for side in [-1.0, 1.0]:
             for j in range(maxi(1, int(width / 3.1))):
                 var wx: float = -width * 0.5 + (j + 0.5) * width / maxi(1, int(width / 3.1))
@@ -273,6 +320,13 @@ func _watchtower(pos: Vector3) -> void:
         _box(pos + Vector3(x, 10, 0), Vector3(0.15, 1.2, 5.4), palette["metal"])
 
 func _vehicle(pos: Vector3, armored: bool = false) -> void:
+    # A photographed wreck is far more convincing than a car made of boxes.
+    if battlefield == 1:
+        var wreck: Node3D = Assets.add_ground_model(
+            self, "destroyed_car", pos, 1.84, rng.randf_range(-1.3, 1.3))
+        if wreck != null:
+            _box(pos + Vector3(0, 0.95, 0), Vector3(2.2, 1.85, 4.3), palette["metal"], true).visible = false
+            return
     var body := _box(pos + Vector3(0, 0.98, 0), Vector3(2.65, 1.24, 5.0), palette["metal"], true)
     body.rotation_degrees.y = 1
     _box(pos + Vector3(0, 1.85, -0.20), Vector3(2.1, 0.8, 2.7), palette["rust"])
@@ -322,6 +376,7 @@ func _mountain_base() -> void:
     _sandbags(Vector3(-3, 0, 3), 5)
     _crate(Vector3(-6.5, 0.65, -7), 1.3)
     _crate(Vector3(8.5, 0.65, -30), 1.3)
+    Assets.add_ground_model(self, "ammo_box", Vector3(-3, 0, -11), 0.4)
     _crate(Vector3(10, 0.5, -31), 1.0)
     _vehicle(Vector3(-7.5, 0, 12.5), true)
     _antenna(Vector3(0, 0, -49))
@@ -346,6 +401,21 @@ func _broken_city() -> void:
     _crate(Vector3(8.5, 0.75, -22), 1.5)
     _crate(Vector3(-8.3, 0.5, -29), 1.0)
     _sandbags(Vector3(0, 0, -34), 7)
+    # Authored Poly Haven street furniture and cover models, CC0.
+    for prop_location in [
+        Vector3(-4, 0, -4), Vector3(7, 0, -24), Vector3(-8, 0, -36)
+    ]:
+        var cover: Node3D = Assets.add_ground_model(
+            self, "road_barrier", prop_location, 1.12, rng.randf_range(-0.35, 0.35))
+        if cover != null:
+            _box(prop_location + Vector3(0, 0.55, 0), Vector3(2.55, 1.10, 0.55), palette["rock"], true).visible = false
+    for barrel_location in [Vector3(9, 0, -3), Vector3(-10, 0, -23), Vector3(9.5, 0, -45)]:
+        Assets.add_ground_model(self, "barrel", barrel_location, 1.0)
+    for lamp_z in [-47.0, -15.0, 16.0, 33.0]:
+        Assets.add_ground_model(self, "street_lamp", Vector3(-12.7, 0, lamp_z), 8.1, PI)
+        Assets.add_ground_model(self, "street_lamp", Vector3(12.7, 0, lamp_z), 8.1)
+    Assets.add_ground_model(self, "ammo_box", Vector3(-8.2, 0, -29), 0.36)
+    Assets.add_ground_model(self, "generator", Vector3(13.2, 0, -40), 1.2)
     _smoke(Vector3(-15, 0, -15))
     _smoke(Vector3(17, 0, -45))
     _helicopter(Vector3(0, 7.4, -50))
@@ -353,6 +423,10 @@ func _broken_city() -> void:
     extraction_position = Vector3(0, 1.2, -50)
 
 func _helicopter(pos: Vector3) -> void:
+    var imported: Node3D = Assets.add_ground_model(
+        self, "helicopter", pos - Vector3(0, 1.4, 0), 3.2, -PI * 0.5)
+    if imported != null:
+        return
     var heli := Node3D.new()
     add_child(heli)
     heli.position = pos
