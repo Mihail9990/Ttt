@@ -34,6 +34,18 @@ class MainActivity : Activity() {
             setTextColor(Color.rgb(75, 89, 109))
         }
 
+        val version = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "?"
+        } catch (_: Exception) {
+            "?"
+        }
+        val versionLabel = TextView(this).apply {
+            text = "Версия $version"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(75, 89, 109))
+        }
+
         val button = Button(this).apply {
             text = "Проверить кнопку"
             setOnClickListener {
@@ -49,6 +61,10 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply { topMargin = dp(20) })
+        container.addView(versionLabel, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = dp(10) })
         container.addView(button, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
