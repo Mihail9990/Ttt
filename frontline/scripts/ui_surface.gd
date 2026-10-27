@@ -62,7 +62,7 @@ func _draw_menu() -> void:
     _text("ТАКТИЧЕСКИЙ 3D-ШУТЕР / ОДИНОЧНАЯ КАМПАНИЯ", 88, 206, 21, MUTED)
     draw_line(_pos(88, 231), _pos(1190, 231), Color(1,1,1,0.18), maxf(1.0,_scale()))
     _text("ВЫБЕРИ ОПЕРАЦИЮ", 88, 297, 31)
-    var first := hud.selected_mission == 0
+    var first: bool = hud.selected_mission == 0
     _panel(88, 323, 526, 155, Color(0.09,0.14,0.18,0.94), GOLD if first else Color("#465861"))
     _panel(640, 323, 526, 155, Color(0.09,0.14,0.18,0.94), GOLD if not first else Color("#465861"))
     _text("01", 111, 360, 29, GOLD)
@@ -96,7 +96,7 @@ func _draw_game() -> void:
     draw_circle(middle, 1.6 * _scale(), cross_col)
 
     # Objective marker: bearing and distance to extraction when accessible.
-    var remaining := hud.game.living_enemies()
+    var remaining: int = hud.game.living_enemies()
     if remaining == 0:
         var distance := int(player.global_position.distance_to(hud.game.extraction_position))
         _panel(499, 122, 282, 57, Color(0.03,0.10,0.12,0.67), GREEN)
@@ -140,7 +140,7 @@ func _draw_game() -> void:
 
 func _draw_mobile_controls() -> void:
     var scl := _scale()
-    var base := hud.joystick_anchor if hud.joystick_anchor != Vector2.ZERO and not hud.move_axis.is_zero_approx() else _pos(135, 520)
+    var base: Vector2 = hud.joystick_anchor if hud.joystick_anchor != Vector2.ZERO and not hud.move_axis.is_zero_approx() else _pos(135, 520)
     draw_circle(base, 76 * scl, Color(0.01,0.03,0.05,0.31))
     draw_arc(base, 76 * scl, 0, TAU, 32, Color(0.65,0.77,0.78,0.42), 2.0 * scl)
     draw_circle(base + hud.move_axis * 48.0 * scl, 31.0 * scl, Color(0.75,0.83,0.80,0.26))

@@ -127,7 +127,7 @@ func _physics_process(dt: float) -> void:
 
 func _attack(player: CharacterBody3D, distance: float) -> void:
     var origin := global_position + Vector3(0, 0.45, 0)
-    var destination := player.camera.global_position
+    var destination: Vector3 = player.camera.global_position
     var ray := PhysicsRayQueryParameters3D.create(origin, destination)
     ray.exclude = [get_rid()]
     var hit := get_world_3d().direct_space_state.intersect_ray(ray)
