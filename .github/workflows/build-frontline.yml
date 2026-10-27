@@ -59,13 +59,34 @@ jobs:
       - name: Retrieve open-source models and textures
         run: python3 frontline/tools/fetch_assets.py
 
+      - name: Convert compressed first-person weapon for Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          IN="frontline/assets/models/first_person_m4a1.glb"
+          OUT="/tmp/first_person_godot.glb"
+          npx --yes @gltf-transform/cli@4.5.1 dequantize "$IN" "$OUT"
+          python3 - "$OUT" <<'PY'
+          import sys, json, struct
+          with open(sys.argv[1], "rb") as f:
+              magic, version, length = struct.unpack("<III", f.read(12))
+              assert magic == 0x46546C67 and version == 2, "Not a glTF 2.0 binary"
+              size, kind = struct.unpack("<II", f.read(8))
+              doc = json.loads(f.read(size).decode("utf-8"))
+          required = doc.get("extensionsRequired", [])
+          print("glTF required extensions after conversion:", required)
+          assert "EXT_meshopt_compression" not in required, "Meshopt still present"
+          assert "KHR_mesh_quantization" not in required, "Quantization still present"
+          PY
+          mv "$OUT" "$IN"
+
       - name: Validate GDScript imports
         shell: bash
         run: |
           set -euo pipefail
           godot --headless --path frontline --editor --quit > /tmp/godot-import.log 2>&1 || { cat /tmp/godot-import.log; exit 1; }
           cat /tmp/godot-import.log
-          if grep -Ei 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Failed loading resource' /tmp/godot-import.log; then
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Failed loading resource|Error importing|Can.t import file' /tmp/godot-import.log; then
             echo "::error::GDScript parse/import errors above"
             exit 1
           fi
