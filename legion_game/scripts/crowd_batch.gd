@@ -62,7 +62,7 @@ func setup(model_path: String, max_instances: int, infected: bool = false) -> vo
     add_child(shadow_batch)
     if not infected:
         var rifle := BoxMesh.new()
-        rifle.size = Vector3(0.12, 0.14, 0.88)
+        rifle.size = Vector3(0.08, 0.10, 0.58)
         var rifle_mat := StandardMaterial3D.new()
         rifle_mat.albedo_color = Color("#17242a")
         rifle_mat.metallic = 0.6
@@ -92,7 +92,7 @@ func show_units(units: Array, delta: float) -> void:
             var shadow_size: float = float(item.get("size", 1.0))
             shadow_batch.multimesh.set_instance_transform(shadow_count, Transform3D(Basis().scaled(Vector3(shadow_size, 1.0, shadow_size)), Vector3(float(item["x"]), 0.025, float(item["z"]))))
             if weapon_batch != null:
-                var weapon_position := Vector3(float(item["x"]) + 0.28 * shadow_size, 1.12 * shadow_size, float(item["z"]) - 0.45 * shadow_size)
+                var weapon_position := Vector3(float(item["x"]) + 0.24 * shadow_size, 1.14 * shadow_size, float(item["z"]) - 0.33 * shadow_size)
                 weapon_batch.multimesh.set_instance_transform(shadow_count, Transform3D(Basis().scaled(Vector3.ONE * shadow_size), weapon_position))
             shadow_count += 1
         var frame := posmod(int(floor(clock * 8.5 + float(item.get("phase", 0.0)))), 6)

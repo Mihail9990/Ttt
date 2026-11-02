@@ -108,12 +108,13 @@ func _play() -> void:
         _box(Rect2(25, 150, 155, 40), Color(0.02, 0.16, 0.20, 0.88), 8, Color(C_CYAN, 0.5), 1)
         _text("◆  БРОНЯ %d" % game.shield, Vector2(37, 177), 16, C_CYAN)
     if not game.boss.is_empty():
-        _box(Rect2(115, 164, 490, 53), Color(0.07, 0.06, 0.06, 0.92), 8)
-        _text("ГРОМИЛА", Vector2(128, 187), 16, C_WHITE)
-        draw_rect(Rect2(128, 196, 464, 8), Color(0.3, 0.14, 0.13))
-        draw_rect(Rect2(128, 196, 464 * clampf(float(game.boss["hp"]) / float(game.boss["max_hp"]), 0, 1), 8), C_RED)
+        var boss_x := 200.0 if game.shield > 0 else 115.0
+        _box(Rect2(boss_x, 164, 490, 53), Color(0.07, 0.06, 0.06, 0.92), 8)
+        _text("ГРОМИЛА", Vector2(boss_x + 13, 187), 16, C_WHITE)
+        draw_rect(Rect2(boss_x + 13, 196, 464, 8), Color(0.3, 0.14, 0.13))
+        draw_rect(Rect2(boss_x + 13, 196, 464 * clampf(float(game.boss["hp"]) / float(game.boss["max_hp"]), 0, 1), 8), C_RED)
     if game.combo >= 5:
-        _text("СЕРИЯ ×%d" % game.combo, Vector2(475, 182), 21, C_ORANGE)
+        _text("СЕРИЯ ×%d" % game.combo, Vector2(475, 238 if not game.boss.is_empty() else 182), 21, C_ORANGE)
     if not game.toast_message.is_empty():
         _box(Rect2(115, 249, 490, 65), Color(0.035, 0.10, 0.11, 0.9), 9, Color(C_CYAN, 0.6), 1)
         _text(game.toast_message, Vector2(115, 292), 23, C_WHITE, 490, HORIZONTAL_ALIGNMENT_CENTER)
@@ -206,7 +207,8 @@ func _credits() -> void:
 func _virtual(point: Vector2) -> Vector2:
     return (point - offset) / maxf(0.01, scale_factor)
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+    # Raw touch must be handled at the Node level; desktop GUI filtering is mouse-oriented.
     if game == null:
         return
     if event is InputEventScreenTouch:
@@ -218,13 +220,17 @@ func _gui_input(event: InputEvent) -> void:
         elif not touch.pressed and touch.index == pointer_index:
             _release(p)
             pointer_index = -1
-        accept_event()
+        get_viewport().set_input_as_handled()
     elif event is InputEventScreenDrag:
         var drag := event as InputEventScreenDrag
         if dragging and drag.index == pointer_index:
             game.target_x = clampf(game.target_x + drag.relative.x / maxf(scale_factor, 0.01) * 0.019, -5.15, 5.15)
-        accept_event()
-    elif event is InputEventMouseButton:
+        get_viewport().set_input_as_handled()
+
+func _gui_input(event: InputEvent) -> void:
+    if game == null:
+        return
+    if event is InputEventMouseButton:
         var button := event as InputEventMouseButton
         if button.button_index == MOUSE_BUTTON_LEFT:
             if button.pressed:
