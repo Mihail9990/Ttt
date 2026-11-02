@@ -23,19 +23,19 @@ func _test() -> void:
     check(game.marines.initialised and game.zombies.initialised, "animated instanced 3D models loaded")
     check(game.marines.visible_count() == 11 and game.zombies.visible_count() == 24, "menu displays squad and horde")
     game.start_run()
-    check(game.phase == game.Phase.PLAY and game.squad_count == 8, "new run starts with eight fighters")
-    check(game.gates.size() == 2 and game.enemies.size() == 18, "initial horde and gate choices spawn")
+    check(game.phase == game.Phase.PLAY and game.squad_count == 14, "new run starts with fourteen fighters")
+    check(game.gates.size() == 2 and game.enemies.size() == 48, "initial horde and gate choices spawn")
     game.player_x = -2.0
     for gate in game.gates:
         gate["node"].position.z = 6.7
     game._advance_gates(0.01)
-    check(game.gates.is_empty() and game.squad_count == 13, "left gate adds five fighters")
+    check(game.gates.is_empty() and game.squad_count == 19, "left gate adds five fighters")
     game.start_run()
     game.player_x = 2.0
     for gate in game.gates:
         gate["node"].position.z = 6.7
     game._advance_gates(0.01)
-    check(game.damage > 14.9 and game.squad_count == 8, "right gate increases damage")
+    check(game.damage > 14.9 and game.squad_count == 14, "right gate increases damage")
     game.enemies = [{"x":0.0,"z":1.0,"hp":1.0,"phase":0.0,"size":1.0}]
     game.player_x = 0.0
     game.fire_accum = 1.0
@@ -50,15 +50,29 @@ func _test() -> void:
     game._offer_choices()
     game.select_choice(2)
     check(game.phase == game.Phase.PLAY and game.shield == 6, "choice grants armor and resumes")
+    game._offer_choices()
+    game.select_choice(1)
+    check(game.splash > 0.6, "later upgrade unlocks explosive shots")
+    game.enemies = [{"x":0.0,"z":1.0,"hp":1.0,"phase":0.0,"size":1.0}]
+    game._splash_damage(Vector3(0, 1, 1))
+    check(game.enemies.is_empty(), "explosive rounds damage nearby enemies")
     game._hurt_squad(2)
-    check(game.shield == 4 and game.squad_count == 8, "armor absorbs damage")
+    check(game.shield == 4 and game.squad_count == 14, "armor absorbs damage")
     game._hurt_squad(20)
-    check(game.phase == game.Phase.GAME_OVER and int(game.profile["coins"]) == 31, "defeat banks earned coins")
+    check(game.phase == game.Phase.GAME_OVER and int(game.profile["coins"]) == 32, "defeat banks earned coins")
     game.profile["coins"] = 100
     game.purchase("damage")
     check(int(game.profile["damage"]) == 1 and int(game.profile["coins"]) == 60, "permanent upgrade spends coins once")
     game.purchase("damage")
     check(int(game.profile["damage"]) == 1 and int(game.profile["coins"]) == 60, "purchase denied without enough coins")
+    game.save_path = "user://legion_smoke_profile.json"
+    game.test_mode = false
+    game.save_profile()
+    game.profile["coins"] = 0
+    game.profile["damage"] = 0
+    game._load_profile()
+    check(int(game.profile["coins"]) == 60 and int(game.profile["damage"]) == 1, "save file restores permanent progress")
+    game.test_mode = true
     game.return_to_menu()
     check(game.phase == game.Phase.MENU and game.marines.visible_count() == 11, "return to menu restores scene")
     game.start_run()

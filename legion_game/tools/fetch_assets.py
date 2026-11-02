@@ -15,7 +15,6 @@ TIDE = 'https://raw.githubusercontent.com/AetherRadar/operation-steel-tide/d6a33
 # Source, destination, expected SHA-256. Pinning protects builds from changed upstream files.
 FILES = [
  (MODELS+'soldier-marine-light.glb','models/soldier-marine-light.glb','4d0a0a5a21ef989be55b5d5ea76915ee7a159dd0ba177d3db2556fb51aec9903'),
- (MODELS+'enemy-zombie.glb','models/enemy-zombie.glb','3afd2837b117f264afd037a350759b96d6f837fc9b381cca35cf6796b4bab09d'),
  (ENV+'models/props/concrete_road_barrier/concrete_road_barrier.glb','models/road_barrier.glb','e9cfeb1a2e7e6e78c2f2952b21f42dbffb81ca99b02690128344da750619cf6d'),
  (ENV+'ambience/models/burnt_car/burnt_car.glb','models/destroyed_car.glb','73d2a55f768d121f7c3111c618bf097b35e0dfb4d7aa947be28fe5baded60413'),
  (TIDE+'tide_hunter_monster.glb','models/tide/tide_hunter_monster.glb','449e20050bd46e7cd9ee53287b1e1f1b4ecc96d2dc0d16177afe3b350f3f61fb'),
@@ -55,5 +54,5 @@ with ThreadPoolExecutor(max_workers=5) as pool:
     for result in pool.map(download, FILES):
         print(result, flush=True)
 bake = ROOT / 'tools' / 'bake_crowd_models.py'
-for source, output, clip in [('soldier-marine-light.glb','marine_poses.glb','Running'),('enemy-zombie.glb','zombie_poses.glb','Run_Attack')]:
+for source, output, clip in [('soldier-marine-light.glb','marine_poses.glb','Running'),('soldier-marine-light.glb','zombie_poses.glb','Unsteady_Walk')]:
     subprocess.run([sys.executable, str(bake), str(ROOT/'assets/models'/source), str(ROOT/'assets/models'/output), '--clip', clip, '--poses', '6'], check=True)

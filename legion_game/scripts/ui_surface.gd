@@ -196,7 +196,7 @@ func _credits() -> void:
     _veil(0.92)
     _top_label("ИНФОРМАЦИЯ", 84)
     _text("LEGION RUSH", Vector2(48, 165), 44)
-    var lines := ["Выживание отряда в опасном мире.", "Огонь автоматический — веди отряд пальцем.", "", "3D-МОДЕЛИ", "Боец: Meshy AI, CC BY 4.0 (адаптировано).", "Зомби: Quaternius, CC0.", "Громила: HorrorGameMaker.com, CC0.", "Разбитая машина: alexdelker, CC BY 4.0.", "Остальные материалы: Poly Haven и ambientCG, CC0.", "", "Полные ссылки и условия — в CREDITS.md", "в исходном коде игры.", "", "Игра работает без интернета."]
+    var lines := ["Выживание отряда в опасном мире.", "Огонь автоматический — веди отряд пальцем.", "", "3D-МОДЕЛИ", "Боец: Meshy AI, CC BY 4.0 (адаптировано).", "Заражённые: Meshy AI, CC BY 4.0 (адаптировано).", "Громила: HorrorGameMaker.com, CC0.", "Разбитая машина: alexdelker, CC BY 4.0.", "Остальные материалы: Poly Haven и ambientCG, CC0.", "", "Полные ссылки и условия — в CREDITS.md", "в исходном коде игры.", "", "Игра работает без интернета."]
     var y := 225.0
     for line in lines:
         _text(line, Vector2(48, y), 18, C_MUTED if not line.ends_with("МОДЕЛИ") else C_CYAN)

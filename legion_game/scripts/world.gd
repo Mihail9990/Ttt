@@ -59,8 +59,8 @@ func _pbr(dir: String, tint: Color, tile: float) -> StandardMaterial3D:
     return m
 
 func _materials() -> void:
-    materials["asphalt"] = _pbr("Asphalt031", Color("#a7a7a1"), 0.23)
-    materials["concrete"] = _pbr("Concrete034", Color("#a9aead"), 0.27)
+    materials["asphalt"] = _pbr("Asphalt031", Color("#606f72"), 0.23)
+    materials["concrete"] = _pbr("Concrete034", Color("#7c8985"), 0.27)
     materials["metal"] = _pbr("Metal046B", Color("#9aa7a8"), 0.28)
     materials["dark"] = _material(Color("#1c2a2d"), 0.65, 0.55)
     materials["yellow"] = _material(Color("#f6ad39"), 0.12, 0.55, 1.3)
@@ -121,7 +121,11 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, material: Material) -> Me
     return obj
 
 func _road() -> void:
+    # A dark industrial ground keeps the road anchored in a real environment.
+    _box(self, Vector3(0, -1.05, -10), Vector3(220, 0.4, 160), materials["dark"])
     _box(self, Vector3(0, -0.34, -7), Vector3(18, 0.65, 110), materials["asphalt"])
+    for side in [-1.0, 1.0]:
+        _box(self, Vector3(side * 7.85, 0.006, -7), Vector3(0.16, 0.018, 105), materials["white"])
     for x in [-8.5, 8.5]:
         _box(self, Vector3(x, 0.24, -8), Vector3(0.55, 0.5, 105), materials["concrete"])
         _box(self, Vector3(x, 0.83, -8), Vector3(0.18, 0.2, 105), materials["metal"])
@@ -193,15 +197,17 @@ func _decoration() -> void:
     for i in range(5):
         var side := -1.0 if i % 2 == 0 else 1.0
         var z := -34.0 + i * 15.0
-        var barrier := _prop("road_barrier", Vector3(side * 10.1, 0, z), 1.1, PI * 0.5)
+        var barrier := _prop("road_barrier", Vector3(side * 7.9, 0, z), 0.8, PI * 0.5)
         if barrier != null:
             roadside.append(barrier)
-    var wreck := _prop("destroyed_car", Vector3(-12.4, 0, -20), 1.75, 0.18)
-    if wreck != null:
-        roadside.append(wreck)
+    for i in range(3):
+        var side := -1.0 if i % 2 == 0 else 1.0
+        var wreck := _prop("destroyed_car", Vector3(side * 7.2, 0, -35.0 + i * 25.0), 1.12, 0.15 + i * 0.25)
+        if wreck != null:
+            roadside.append(wreck)
     for side in [-1.0, 1.0]:
         var building := Node3D.new()
-        building.position = Vector3(side * 15.0, 0, -27)
+        building.position = Vector3(side * 12.0, 0, -27)
         add_child(building)
         _box(building, Vector3(0, 3, 0), Vector3(7, 6, 12), materials["concrete"])
         for z in [-4.0, 0.0, 4.0]:

@@ -59,6 +59,12 @@ jobs:
           cat /tmp/godot-test.log
           grep -q 'SMOKE RESULT: PASS' /tmp/godot-test.log
           if grep -Ei 'SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Assertion failed' /tmp/godot-test.log; then exit 1; fi
+      - name: Test touch controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 45s godot --headless --path legion_game --script res://tests/touch_trial.gd 2>&1 | tee /tmp/godot-touch.log
+          grep -q 'TOUCH PASS' /tmp/godot-touch.log
       - name: Capture actual gameplay
         continue-on-error: true
         shell: bash

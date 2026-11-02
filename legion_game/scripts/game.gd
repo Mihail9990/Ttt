@@ -26,12 +26,15 @@ var gates: Array = []
 var choices: Array = []
 var distance := 0.0
 var elapsed := 0.0
-var squad_count := 8
+var squad_count := 14
 var player_x := 0.0
 var target_x := 0.0
 var damage := 12.0
 var rate := 1.0
 var shield := 0
+var splash := 0.0
+var shot_number := 0
+var choice_round := 0
 var kills := 0
 var earned := 0
 var combo := 0
@@ -47,6 +50,7 @@ var toast_time := 0.0
 var camera_shake := 0.0
 var shot_audio_timer := 0.0
 var test_mode := false
+var save_path := SAVE_PATH
 var previous_phase := Phase.MENU
 
 func _ready() -> void:
@@ -63,7 +67,7 @@ func _ready() -> void:
     zombies = CrowdScript.new()
     zombies.name = "Horde"
     add_child(zombies)
-    zombies.setup("res://assets/models/zombie_poses.glb", MAX_ENEMIES)
+    zombies.setup("res://assets/models/zombie_poses.glb", MAX_ENEMIES, true)
     sound = SoundScript.new()
     add_child(sound)
     hud = HudScript.new()
@@ -72,9 +76,9 @@ func _ready() -> void:
     _make_menu_scene()
 
 func _load_profile() -> void:
-    if not FileAccess.file_exists(SAVE_PATH):
+    if not FileAccess.file_exists(save_path):
         return
-    var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+    var f := FileAccess.open(save_path, FileAccess.READ)
     if f == null:
         return
     var data = JSON.parse_string(f.get_as_text())
@@ -86,7 +90,7 @@ func _load_profile() -> void:
 func save_profile() -> void:
     if test_mode:
         return
-    var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    var f := FileAccess.open(save_path, FileAccess.WRITE)
     if f != null:
         f.store_string(JSON.stringify(profile))
 
@@ -114,10 +118,13 @@ func start_run() -> void:
     elapsed = 0.0
     player_x = 0.0
     target_x = 0.0
-    squad_count = mini(MAX_SQUAD, 8 + 2 * int(profile["squad"]))
+    squad_count = mini(MAX_SQUAD, 14 + 2 * int(profile["squad"]))
     damage = 12.0 * (1.0 + float(profile["damage"]) * 0.14)
     rate = 1.0 + float(profile["rate"]) * 0.12
     shield = 0
+    splash = 0.0
+    shot_number = 0
+    choice_round = 0
     kills = 0
     earned = 0
     combo = 0
@@ -188,14 +195,14 @@ func _update_run(dt: float) -> void:
         _offer_choices()
 
 func _spawn_wave(first: bool) -> void:
-    var wave_size := 18 if first else mini(28, 10 + int(distance / 90.0) * 2)
+    var wave_size := 48 if first else mini(38, 21 + int(distance / 90.0) * 2)
     wave_size = mini(wave_size, MAX_ENEMIES - enemies.size())
-    var columns := 9 if first else 7
+    var columns := 10 if first else 9
     var start_z := -22.0 if first else -37.0
     for i in range(wave_size):
         var col := i % columns
         var row := int(i / columns)
-        var x := (float(col) - (float(columns) - 1.0) * 0.5) * (1.45 if first else 1.8) + rng.randf_range(-0.12, 0.12)
+        var x := (float(col) - (float(columns) - 1.0) * 0.5) * (1.25 if first else 1.45) + rng.randf_range(-0.12, 0.12)
         enemies.append({"x": x, "z": start_z - float(row) * 1.35 - rng.randf_range(0.0, 0.4), "hp": 23.0 + distance * 0.025, "phase": rng.randf_range(0, 6), "size": rng.randf_range(0.95, 1.08)})
 
 func _advance_enemies(dt: float) -> void:
@@ -254,6 +261,9 @@ func _apply_upgrade(option: Dictionary) -> void:
         "shield":
             shield += int(option["value"])
             _notice("БРОНЯ +%d" % int(option["value"]))
+        "splash":
+            splash += float(option["value"])
+            _notice("ВЗРЫВНЫЕ ПАТРОНЫ ↑")
 
 func _spawn_boss() -> void:
     var hp := 420.0 + distance * 1.1
@@ -312,18 +322,36 @@ func _fire(dt: float) -> void:
             e["hp"] = float(e["hp"]) - damage
             if float(e["hp"]) <= 0:
                 enemies.remove_at(target_index)
-                kills += 1
-                combo += 1
-                combo_timer = 2.0
-                earned += 1 + (1 if combo >= 20 and combo % 5 == 0 else 0)
-                if combo == 10 or combo == 25 or combo == 50:
-                    _notice("СЕРИЯ ×%d" % combo)
+                _credit_kill()
+        shot_number += 1
+        if splash > 0.0 and shot_number % 4 == 0:
+            _splash_damage(destination)
         shots.append({"from":origin,"to":destination,"age":0.0,"life":0.14})
         if sparks.size() < 80:
             sparks.append({"pos":destination,"age":0.0,"life":0.18,"size":rng.randf_range(0.7, 1.6)})
         if shot_audio_timer <= 0:
             sound.play("shot", -20.0)
             shot_audio_timer = 0.10
+
+func _credit_kill() -> void:
+    kills += 1
+    combo += 1
+    combo_timer = 2.0
+    earned += 1 + (1 if combo >= 20 and combo % 5 == 0 else 0)
+    if combo == 10 or combo == 25 or combo == 50:
+        _notice("СЕРИЯ ×%d" % combo)
+
+func _splash_damage(center: Vector3) -> void:
+    if sparks.size() < 80:
+        sparks.append({"pos":center, "age":0.0, "life":0.30, "size":3.2})
+    for i in range(enemies.size() - 1, -1, -1):
+        var enemy: Dictionary = enemies[i]
+        var separation := Vector2(float(enemy["x"]) - center.x, float(enemy["z"]) - center.z)
+        if separation.length_squared() <= 3.24:
+            enemy["hp"] = float(enemy["hp"]) - damage * splash
+            if float(enemy["hp"]) <= 0:
+                enemies.remove_at(i)
+                _credit_kill()
 
 func _hurt_squad(amount: int) -> void:
     var absorbed := mini(shield, amount)
@@ -349,16 +377,24 @@ func _update_visuals(dt: float) -> void:
     for i in range(squad_count):
         var col := i % cols
         var row := int(i / cols)
-        squad_visual.append({"x":player_x + (float(col) - (float(cols) - 1.0) * 0.5) * 0.62, "z":7.0 + float(row) * 0.65, "phase":float(i % 6), "size":1.0, "yaw":PI})
+        squad_visual.append({"x":player_x + (float(col) - (float(cols) - 1.0) * 0.5) * 0.62, "z":(-2.0 if phase == Phase.MENU else 7.0) + float(row) * 0.65, "phase":float(i % 6), "size":1.0, "yaw":PI})
     marines.show_units(squad_visual, dt)
     zombies.show_units(enemies, dt)
 
 func _offer_choices() -> void:
-    choices = [
-        {"kind":"squad", "value":7, "title":"ПОДКРЕПЛЕНИЕ", "description":"+7 бойцов в отряд", "icon":"+"},
-        {"kind":"damage", "value":0.30, "title":"ТЯЖЁЛЫЕ ПАТРОНЫ", "description":"+30% к урону", "icon":"✦"},
-        {"kind":"shield", "value":6, "title":"БРОНЯ ОТРЯДА", "description":"Поглощает 6 атак", "icon":"◆"}
-    ]
+    if choice_round % 2 == 0:
+        choices = [
+            {"kind":"squad", "value":7, "title":"ПОДКРЕПЛЕНИЕ", "description":"+7 бойцов в отряд", "icon":"+"},
+            {"kind":"damage", "value":0.30, "title":"ТЯЖЁЛЫЕ ПАТРОНЫ", "description":"+30% к урону", "icon":"✦"},
+            {"kind":"shield", "value":6, "title":"БРОНЯ ОТРЯДА", "description":"Поглощает 6 атак", "icon":"◆"}
+        ]
+    else:
+        choices = [
+            {"kind":"rate", "value":0.35, "title":"СКОРОСТРЕЛЬНОСТЬ", "description":"+35% к темпу огня", "icon":"»"},
+            {"kind":"splash", "value":0.65, "title":"ВЗРЫВНЫЕ ПАТРОНЫ", "description":"Каждый 4-й выстрел бьёт по площади", "icon":"✹"},
+            {"kind":"squad", "value":9, "title":"РЕЗЕРВНЫЙ ОТРЯД", "description":"+9 бойцов в отряд", "icon":"+"}
+        ]
+    choice_round += 1
     phase = Phase.CHOICE
     sound.play("upgrade")
 
