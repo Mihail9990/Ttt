@@ -42,6 +42,7 @@ func _test() -> void:
     game._fire(0.01)
     check(game.kills == 1 and game.enemies.is_empty() and game.earned == 1, "automatic fire defeats enemy and awards coins")
     game._spawn_boss()
+    check(game.world.boss_root.get_child_count() > 0 and game.world.boss_animation != null, "3D boss and animation are present")
     game.boss["hp"] = 1.0
     game.boss["z"] = 1.0
     game.fire_accum = 1.0

@@ -216,7 +216,7 @@ func _decoration() -> void:
 
 func _pools() -> void:
     var beam_mesh := BoxMesh.new()
-    beam_mesh.size = Vector3(0.07, 0.07, 1.0)
+    beam_mesh.size = Vector3(0.09, 0.09, 1.0)
     var beam_mat := _material(Color("#ffd77a"), 0.0, 0.3, 3.4)
     beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     beam_mesh.material = beam_mat
@@ -323,7 +323,7 @@ func draw_effects(shots: Array, sparks: Array) -> void:
         var progress: float = clampf(float(s["age"]) / float(s["life"]), 0.0, 1.0)
         var at := from.lerp(to, progress)
         var basis := Basis.looking_at(direction, Vector3.UP)
-        basis = basis.scaled(Vector3(1, 1, 2.4))
+        basis = basis.scaled(Vector3(1, 1, 3.2))
         beam_batch.multimesh.set_instance_transform(i, Transform3D(basis, at))
     beam_batch.multimesh.visible_instance_count = count
     count = mini(sparks.size(), spark_batch.multimesh.instance_count)

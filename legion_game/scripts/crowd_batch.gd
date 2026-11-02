@@ -5,6 +5,7 @@ var capacity := 0
 var clock := 0.0
 var initialised := false
 var shadow_batch: MultiMeshInstance3D
+var weapon_batch: MultiMeshInstance3D
 
 func setup(model_path: String, max_instances: int, infected: bool = false) -> void:
     capacity = max_instances
@@ -59,6 +60,23 @@ func setup(model_path: String, max_instances: int, infected: bool = false) -> vo
     shadow_batch.multimesh = shadows
     shadow_batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(shadow_batch)
+    if not infected:
+        var rifle := BoxMesh.new()
+        rifle.size = Vector3(0.12, 0.14, 0.88)
+        var rifle_mat := StandardMaterial3D.new()
+        rifle_mat.albedo_color = Color("#17242a")
+        rifle_mat.metallic = 0.6
+        rifle_mat.roughness = 0.42
+        rifle.material = rifle_mat
+        var weapons := MultiMesh.new()
+        weapons.transform_format = MultiMesh.TRANSFORM_3D
+        weapons.mesh = rifle
+        weapons.instance_count = capacity
+        weapons.visible_instance_count = 0
+        weapon_batch = MultiMeshInstance3D.new()
+        weapon_batch.multimesh = weapons
+        weapon_batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(weapon_batch)
     initialised = batches.size() == 6
     if not initialised:
         push_error("Crowd model must contain six animation poses: " + model_path)
@@ -73,6 +91,9 @@ func show_units(units: Array, delta: float) -> void:
         if shadow_count < capacity:
             var shadow_size: float = float(item.get("size", 1.0))
             shadow_batch.multimesh.set_instance_transform(shadow_count, Transform3D(Basis().scaled(Vector3(shadow_size, 1.0, shadow_size)), Vector3(float(item["x"]), 0.025, float(item["z"]))))
+            if weapon_batch != null:
+                var weapon_position := Vector3(float(item["x"]) + 0.28 * shadow_size, 1.12 * shadow_size, float(item["z"]) - 0.45 * shadow_size)
+                weapon_batch.multimesh.set_instance_transform(shadow_count, Transform3D(Basis().scaled(Vector3.ONE * shadow_size), weapon_position))
             shadow_count += 1
         var frame := posmod(int(floor(clock * 8.5 + float(item.get("phase", 0.0)))), 6)
         var index: int = counts[frame]
@@ -89,6 +110,8 @@ func show_units(units: Array, delta: float) -> void:
     for i in range(6):
         batches[i].multimesh.visible_instance_count = counts[i]
     shadow_batch.multimesh.visible_instance_count = shadow_count
+    if weapon_batch != null:
+        weapon_batch.multimesh.visible_instance_count = shadow_count
 
 func visible_count() -> int:
     var total := 0

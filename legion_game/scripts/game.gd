@@ -303,7 +303,11 @@ func _fire(dt: float) -> void:
             fire_accum = minf(fire_accum, 1.0)
             break
         fire_accum -= 1.0
-        var origin := Vector3(player_x + rng.randf_range(-1.6, 1.6), 1.3, 7.0 + rng.randf_range(0, 1.0))
+        var firing_columns := mini(9, maxi(1, int(ceil(sqrt(float(squad_count) * 1.5)))))
+        var shooter := shot_number % maxi(1, squad_count)
+        var shooter_col := shooter % firing_columns
+        var shooter_row := int(shooter / firing_columns)
+        var origin := Vector3(player_x + (float(shooter_col) - (float(firing_columns) - 1.0) * 0.5) * 0.62 + 0.28, 1.12, 6.1 + float(shooter_row) * 0.65)
         var destination := Vector3.ZERO
         if shoot_boss:
             destination = Vector3(float(boss["x"]) + rng.randf_range(-1.0, 1.0), rng.randf_range(1.4, 3.2), float(boss["z"]))
@@ -326,7 +330,7 @@ func _fire(dt: float) -> void:
         shot_number += 1
         if splash > 0.0 and shot_number % 4 == 0:
             _splash_damage(destination)
-        shots.append({"from":origin,"to":destination,"age":0.0,"life":0.14})
+        shots.append({"from":origin,"to":destination,"age":0.0,"life":0.22})
         if sparks.size() < 80:
             sparks.append({"pos":destination,"age":0.0,"life":0.18,"size":rng.randf_range(0.7, 1.6)})
         if shot_audio_timer <= 0:
