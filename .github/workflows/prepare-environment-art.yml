@@ -1,0 +1,38 @@
+name: Prepare 3D environment art
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prepare-environment-art.yml'
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch open licensed environment models
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa/models qa/textures/Asphalt031 qa/textures/Concrete034 qa/textures/Metal046B qa/models/tide
+          BASE="https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets"
+          curl -fL --retry 4 -o qa/models/road_barrier.glb "$BASE/models/props/concrete_road_barrier/concrete_road_barrier.glb"
+          curl -fL --retry 4 -o qa/models/destroyed_car.glb "$BASE/ambience/models/burnt_car/burnt_car.glb"
+          curl -fL --retry 4 -o qa/models/barrel.glb "$BASE/models/props/Barrel_01/Barrel_01.glb"
+          curl -fL --retry 4 -o qa/models/crate.glb "$BASE/models/props/old_military_crate/old_military_crate.glb"
+          for TEX in Asphalt031 Concrete034 Metal046B; do
+            for MAP in Color NormalGL Roughness; do
+              curl -fL --retry 4 -o "qa/textures/$TEX/$MAP.webp" "$BASE/textures/$TEX/$MAP.webp"
+            done
+          done
+          curl -fL --retry 4 -o qa/textures/sunset.hdr "$BASE/hdr/bambanani_sunset_2k.hdr"
+          BASE2="https://raw.githubusercontent.com/AetherRadar/operation-steel-tide/d6a33b932e00fb9016dea407eca3f909aeaf2dcb/assets/models/tide_hunter_monster"
+          for FILE in tide_hunter_monster.glb tide_hunter_monster_test_StingrayPBS1SG_AlbedoTransparency.png tide_hunter_monster_test_StingrayPBS1SG_MetallicSmoothness.png tide_hunter_monster_test_StingrayPBS1SG_Normal.png; do
+            curl -fL --retry 4 -o "qa/models/tide/$FILE" "$BASE2/$FILE"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Open-Environment-Art
+          path: qa/
+          compression-level: 0
+          retention-days: 1
