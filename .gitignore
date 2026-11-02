@@ -1,0 +1,7 @@
+legion_game/.godot/
+legion_game/assets/
+legion_game/**/*.import
+legion_game/**/*.uid
+legion_game/tools/__pycache__/
+dist/
+preview/

@@ -1,0 +1,128 @@
+name: Build LEGION RUSH for Android
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      GODOT_VERSION: '4.5.2'
+      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/legion_game/signing/legion-test.jks
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: legiondebug
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - name: Install Android build tools
+        run: sdkmanager "platform-tools" "build-tools;35.0.1" "platforms;android-35"
+      - name: Download Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fL --retry 4 --retry-delay 3 -o /tmp/godot-editor.zip "$URL"
+          unzip -q /tmp/godot-editor.zip -d /tmp/godot-editor
+          sudo install -m 755 "/tmp/godot-editor/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          godot --headless --version
+      - name: Cache licensed art
+        uses: actions/cache@v4
+        with:
+          path: legion_game/assets
+          key: legion-art-${{ hashFiles('legion_game/tools/fetch_assets.py') }}
+      - name: Prepare 3D models
+        run: |
+          python -m pip install numpy==2.2.6
+          python legion_game/tools/fetch_assets.py
+      - name: Import Godot project
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path legion_game --editor --quit > /tmp/godot-import.log 2>&1 || { cat /tmp/godot-import.log; exit 1; }
+          cat /tmp/godot-import.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Failed loading resource|Error importing|Can.t import file' /tmp/godot-import.log; then exit 1; fi
+      - name: Test combat, upgrades and saving
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 150s godot --headless --path legion_game --script res://tests/smoke.gd > /tmp/godot-test.log 2>&1 || { cat /tmp/godot-test.log; exit 1; }
+          cat /tmp/godot-test.log
+          grep -q 'SMOKE RESULT: PASS' /tmp/godot-test.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Assertion failed' /tmp/godot-test.log; then exit 1; fi
+      - name: Capture actual gameplay
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p preview
+          export LEGION_PREVIEW_DIR="$GITHUB_WORKSPACE/preview"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          timeout 120s xvfb-run -a -s '-screen 0 720x1440x24' godot --path legion_game --rendering-method gl_compatibility --script res://tests/render_preview.gd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Legion-Rush-Gameplay-Preview
+          path: preview/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Cache Android template
+        id: templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.5.2.stable/android_debug.apk
+          key: godot-4.5.2-android-debug-v1
+      - name: Download Android template
+        if: steps.templates.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -fL --retry 4 --retry-delay 3 -o /tmp/godot-templates.tpz "$URL"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -p /tmp/godot-templates.tpz templates/android_debug.apk > "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_debug.apk"
+          test -s "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_debug.apk"
+      - name: Configure Android export
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.5.tres" <<SETTINGS
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          SETTINGS
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path('legion_game/export_presets.cfg')
+          s = p.read_text()
+          s = s.replace('version/code=1', f'version/code={int(os.environ["GITHUB_RUN_NUMBER"])}')
+          s = s.replace('version/name="0.1.0"', f'version/name="0.1.{os.environ["GITHUB_RUN_NUMBER"]}"')
+          p.write_text(s)
+          PY
+      - name: Export and verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          APK="dist/Legion-Rush-v0.1.${GITHUB_RUN_NUMBER}.apk"
+          godot --headless --path legion_game --export-debug Android "$GITHUB_WORKSPACE/$APK" 2>&1 | tee /tmp/godot-export.log
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --print-certs "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Legion-Rush-Android-v0.1.${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
