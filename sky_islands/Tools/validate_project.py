@@ -27,6 +27,8 @@ def validate():
     assert "GlobalDefaultGameMode=/Script/SkyIslands.SkyGameMode" in engine_config
     assert "bRemoteExecution=False" in engine_config, "Remote Python execution must remain disabled"
     input_config = (ROOT / "Config/DefaultInput.ini").read_text(encoding="utf-8")
+    action_lines = [line for line in input_config.splitlines() if line.startswith("+ActionMappings=")]
+    assert len(action_lines) == len(set(action_lines)), "Duplicate action binding"
     for mapping in ("MoveForward", "MoveRight", "Turn", "LookUp", "Primary", "Secondary",
                     "Jump", "Interact", "Save", "Load", "Market", "Fastener", "Tool1", "Tool6"):
         assert 'Name="' + mapping + '"' in input_config, "Input mapping missing: " + mapping
