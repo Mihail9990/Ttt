@@ -1,0 +1,395 @@
+{
+  "schema_version": 1,
+  "resolution": "1k",
+  "provider": "Poly Haven",
+  "license": "CC0-1.0",
+  "license_url": "https://polyhaven.com/license",
+  "date_verified": "2026-11-14",
+  "assets": [
+    {
+      "id": "Drill_01",
+      "kind": "model",
+      "authors": [
+        "Fernando Quinn"
+      ],
+      "usage": "held cordless drill visual; gameplay is implemented separately",
+      "mesh_alias": "/Game/Art/Tools/SM_Drill",
+      "source": "https://polyhaven.com/a/Drill_01",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/Drill_01/Drill_01_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/Drill_01/Drill_01_1k.gltf",
+          "bytes": 2637,
+          "sha256": "b162c83a8e35c869aef4f50e2cd80a750be248389e829f6cf9ced73ba094b9db",
+          "role": "gltf"
+        },
+        {
+          "path": "PolyHaven/Drill_01/Drill_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/Drill_01/Drill_01.bin",
+          "bytes": 90100,
+          "sha256": "0353e743c05051546945fd2d79e9c96bfad7ad387e0d47bc5d408d78ae7b9fe8",
+          "role": "buffer"
+        },
+        {
+          "path": "PolyHaven/Drill_01/textures/Drill_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Drill_01/Drill_01_nor_gl_1k.jpg",
+          "bytes": 133488,
+          "sha256": "08d3efc87520243ad9ef031ec0d67369dac5aae2752f8db33988015cbb06e2eb",
+          "role": "normal_gl"
+        },
+        {
+          "path": "PolyHaven/Drill_01/textures/Drill_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Drill_01/Drill_01_diff_1k.jpg",
+          "bytes": 106186,
+          "sha256": "2c1cfdc0d3e65ca490e0bd5cdc28173672bf68f9bb62278cc7094c9c5d6a7dcb",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/Drill_01/textures/Drill_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Drill_01/Drill_01_arm_1k.jpg",
+          "bytes": 168655,
+          "sha256": "974670d66a17cceebec08dcee5e4895684b519bcd2e4c8ea748a955fe1e41057",
+          "role": "arm"
+        }
+      ],
+      "entry": "PolyHaven/Drill_01/Drill_01_1k.gltf"
+    },
+    {
+      "id": "wooden_hammer_01",
+      "kind": "model",
+      "authors": [
+        "James Ray Cock"
+      ],
+      "usage": "held hammer visual; contact, fasteners and animation implemented separately",
+      "mesh_alias": "/Game/Art/Tools/SM_Hammer",
+      "source": "https://polyhaven.com/a/wooden_hammer_01",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/wooden_hammer_01/wooden_hammer_01_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_hammer_01/wooden_hammer_01_1k.gltf",
+          "bytes": 2709,
+          "sha256": "c2149d9f54bd2115af7edeac528e4890e8e68f0d2e3e939367268547837c6b29",
+          "role": "gltf"
+        },
+        {
+          "path": "PolyHaven/wooden_hammer_01/wooden_hammer_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_hammer_01/wooden_hammer_01.bin",
+          "bytes": 101960,
+          "sha256": "06a8e9c61402fba101a538b7e30f87a76bbea45b65a0b4972789c56050660ec8",
+          "role": "buffer"
+        },
+        {
+          "path": "PolyHaven/wooden_hammer_01/textures/wooden_hammer_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_hammer_01/wooden_hammer_01_nor_gl_1k.jpg",
+          "bytes": 577022,
+          "sha256": "ee7c8f5206c22e358aeab11a5054a5769f72e70b4ac437624d7757e0499b4dd9",
+          "role": "normal_gl"
+        },
+        {
+          "path": "PolyHaven/wooden_hammer_01/textures/wooden_hammer_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_hammer_01/wooden_hammer_01_diff_1k.jpg",
+          "bytes": 517825,
+          "sha256": "f4b2f9e151acd26028dc731677a776b885f51fc26e8f9155ae7ba5a959daed77",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/wooden_hammer_01/textures/wooden_hammer_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_hammer_01/wooden_hammer_01_arm_1k.jpg",
+          "bytes": 686781,
+          "sha256": "f4a09a140d3bfe8d542f0facf15d0fcfcf34a58b4e5772b8970c526079c01652",
+          "role": "arm"
+        }
+      ],
+      "entry": "PolyHaven/wooden_hammer_01/wooden_hammer_01_1k.gltf"
+    },
+    {
+      "id": "wood_planks",
+      "kind": "material",
+      "authors": [
+        "Amal Kumar"
+      ],
+      "usage": "wood surface",
+      "alias": "M_Wood",
+      "surface_meters": 1.5,
+      "source": "https://polyhaven.com/a/wood_planks",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/wood_planks/wood_planks_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_diff_1k.jpg",
+          "bytes": 609525,
+          "sha256": "3b0669f683e4bf10f5a55a381cfa9669a7b8dfd921901829daa3b35acc2bbdec",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/wood_planks/wood_planks_nor_dx_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_nor_dx_1k.jpg",
+          "bytes": 654880,
+          "sha256": "d54a8ad99a94b9a7a7185cebce2411eb74ae9031d34c5d208dd53dc42cd53917",
+          "role": "normal_dx"
+        },
+        {
+          "path": "PolyHaven/wood_planks/wood_planks_rough_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_rough_1k.jpg",
+          "bytes": 299757,
+          "sha256": "1b7f115bfa25619b0a2db554eb1ab88a6fc5ef0b74ba4890611eae04d00b9829",
+          "role": "roughness"
+        }
+      ]
+    },
+    {
+      "id": "brown_mud_03",
+      "kind": "material",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "usage": "excavatable soil surface",
+      "alias": "M_Ground",
+      "surface_meters": 1.3,
+      "source": "https://polyhaven.com/a/brown_mud_03",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/brown_mud_03/brown_mud_03_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_diff_1k.jpg",
+          "bytes": 526262,
+          "sha256": "6da4fbd6fc5d21044dcbdbd96e098fb464ed544b42c982e72ce8ccd1d53686c5",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/brown_mud_03/brown_mud_03_nor_dx_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_nor_dx_1k.jpg",
+          "bytes": 1244183,
+          "sha256": "16845152969cd5117915ea39465149710bb0bad547809db25758f5a578b19c55",
+          "role": "normal_dx"
+        },
+        {
+          "path": "PolyHaven/brown_mud_03/brown_mud_03_rough_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_03/brown_mud_03_rough_1k.jpg",
+          "bytes": 287221,
+          "sha256": "e1eff4cb387ab1211b473df6c1e3e280e4d18defdcc8b68ca0791bcd9f3c22da",
+          "role": "roughness"
+        }
+      ]
+    },
+    {
+      "id": "rock_boulder_cracked",
+      "kind": "material",
+      "authors": [
+        "Dario Barresi",
+        "Dimitrios Savva"
+      ],
+      "usage": "island cliff surface",
+      "alias": "M_Rock",
+      "surface_meters": 1.4,
+      "source": "https://polyhaven.com/a/rock_boulder_cracked",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/rock_boulder_cracked/rock_boulder_cracked_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_diff_1k.jpg",
+          "bytes": 998110,
+          "sha256": "e88c9e50109c7f610bc380a00b9bdac5954c392bb02134dedeea3358da57276a",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/rock_boulder_cracked/rock_boulder_cracked_nor_dx_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_nor_dx_1k.jpg",
+          "bytes": 1080227,
+          "sha256": "e1669e0b7ba70716787d61484ea2f91fa65be29e9c0019ff8a682edaffe271af",
+          "role": "normal_dx"
+        },
+        {
+          "path": "PolyHaven/rock_boulder_cracked/rock_boulder_cracked_rough_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_rough_1k.jpg",
+          "bytes": 379850,
+          "sha256": "47e6c4b43c9cc5331d0392e3f74777f9a6712edda141dd148586b404c6c30e73",
+          "role": "roughness"
+        }
+      ]
+    },
+    {
+      "id": "brick_wall_001",
+      "kind": "material",
+      "authors": [
+        "Dimitrios Savva",
+        "Rob Tuytel"
+      ],
+      "usage": "assembled brick masonry surface; not a substitute for individual brick geometry",
+      "alias": "M_Brick",
+      "surface_meters": 3.0,
+      "source": "https://polyhaven.com/a/brick_wall_001",
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "files": [
+        {
+          "path": "PolyHaven/brick_wall_001/brick_wall_001_diffuse_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_diffuse_1k.jpg",
+          "bytes": 574381,
+          "sha256": "6a1233ec0186703de830354d89f122991e61e67fb67e0846c7eaf6c5aefea902",
+          "role": "base_color"
+        },
+        {
+          "path": "PolyHaven/brick_wall_001/brick_wall_001_nor_dx_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_nor_dx_1k.jpg",
+          "bytes": 295464,
+          "sha256": "650f397ca1e08d5cdfb951c58b6fc4a0be9d5c710950e4e160d80e2c03dc6459",
+          "role": "normal_dx"
+        },
+        {
+          "path": "PolyHaven/brick_wall_001/brick_wall_001_rough_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_rough_1k.jpg",
+          "bytes": 211093,
+          "sha256": "a23342b02e6c5af106aaece16130aa9153a801cb1a84d5f3e0d06ce248677f38",
+          "role": "roughness"
+        }
+      ]
+    },
+    {
+      "id": "boulder_01",
+      "kind": "model",
+      "material_mode": "source",
+      "authors": [
+        "Rico Cilliers"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "source": "https://polyhaven.com/a/boulder_01",
+      "mesh_alias": "/Game/Art/Nature/SM_Rock",
+      "files": [
+        {
+          "path": "PolyHaven/boulder_01/boulder_01_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/boulder_01/boulder_01_1k.gltf",
+          "bytes": 2773,
+          "sha256": "51487934db898b4c24072780a451e34eca5c02e3ada24a62bbc600bbc4019e92",
+          "role": "gltf"
+        },
+        {
+          "path": "PolyHaven/boulder_01/boulder_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/boulder_01/boulder_01.bin",
+          "bytes": 2938808,
+          "sha256": "7f5b06503d62bd95bfe9c6b8a354a5cc8ff04a4d271a8cf87a3e3125db4232d7",
+          "role": "buffer"
+        },
+        {
+          "path": "PolyHaven/boulder_01/textures/boulder_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_nor_gl_1k.jpg",
+          "bytes": 1183552,
+          "sha256": "0810cf6e89d89bb6eb065b4d2e2855288f5dcbd2c15c6e40ab90d462021b50aa",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/boulder_01/textures/boulder_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_diff_1k.jpg",
+          "bytes": 987467,
+          "sha256": "c38f0e918f6dc16b8d386ba3cdd89805c78320c119a1ceec85856f82b09a65b8",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/boulder_01/textures/boulder_01_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/boulder_01/boulder_01_arm_1k.jpg",
+          "bytes": 659386,
+          "sha256": "c57187c5746b6be913fa53846cb44ff78743e7ca5000f131c9627b99563c2b87",
+          "role": "image"
+        }
+      ],
+      "entry": "PolyHaven/boulder_01/boulder_01_1k.gltf"
+    },
+    {
+      "id": "pine_sapling_small",
+      "kind": "model",
+      "material_mode": "source",
+      "authors": [
+        "Rico Cilliers",
+        "Rob Tuytel"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://polyhaven.com/license",
+      "source": "https://polyhaven.com/a/pine_sapling_small",
+      "mesh_alias": "/Game/Art/Nature/SM_Tree",
+      "files": [
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_bark_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_bark_nor_gl_1k.jpg",
+          "bytes": 1016849,
+          "sha256": "05c46455531781b6cf18cae0648cf627f60ee942adaa8bcbfd1592fc2506a9e0",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_bark_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_bark_diff_1k.jpg",
+          "bytes": 725265,
+          "sha256": "5c76836b01c3536fa0e24207b67bf4f3315b53ebe2b4ecc6f08dfcf3f8d74929",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_bark_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_bark_arm_1k.jpg",
+          "bytes": 801278,
+          "sha256": "336a4680cd571b6076b67afee2310b290b8900d9d126eb39ec1ae92e95be2ea9",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_twig_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_twig_nor_gl_1k.jpg",
+          "bytes": 692711,
+          "sha256": "76af87821d7ff00e25768d5d97a449394fe64a21ae55d099da7f5ed46d9098c8",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_twig_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_twig_diff_1k.jpg",
+          "bytes": 477942,
+          "sha256": "54af7d6fb664b5a38bcb118b557bc50e01e86ec54d6f1a573c3e32c649a53362",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/textures/pine_sapling_small_twig_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/pine_sapling_small/pine_sapling_small_twig_arm_1k.jpg",
+          "bytes": 394056,
+          "sha256": "2eb0aa44124b5a4ae9401e00b23b3c916f4c3f421616ce1bb932f248fc061288",
+          "role": "image"
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/pine_sapling_small_variant0.gltf",
+          "bytes": 5818,
+          "sha256": "2220c5db8d691597f99d7ebaafde1f32d1736f81a86b32626e73ac71133060a5",
+          "role": "gltf",
+          "generated": true
+        },
+        {
+          "path": "PolyHaven/pine_sapling_small/pine_sapling_small_variant0.bin",
+          "bytes": 5457376,
+          "sha256": "8c517149535a5228d1ec722585c4b200042b5e08b17195d7f096fbf89004fa17",
+          "role": "buffer",
+          "generated": true
+        }
+      ],
+      "upstream": {
+        "mesh_index": 0,
+        "gltf": {
+          "path": "pine_sapling_small_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/pine_sapling_small/pine_sapling_small_1k.gltf",
+          "bytes": 11442,
+          "sha256": "f358c01926861dd082f32dba60f7c9fba232b585a985cf38c0d2229eecf4bc48"
+        },
+        "buffer": {
+          "path": "pine_sapling_small.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/pine_sapling_small/pine_sapling_small.bin",
+          "bytes": 17771796,
+          "sha256": "b4d2fc73d53f1d8717eb5ef9a2c66957d2a53152787e543aace88fcd6fca94ef",
+          "role": "buffer"
+        },
+        "derivation": "gltf_mesh_variant"
+      },
+      "entry": "PolyHaven/pine_sapling_small/pine_sapling_small_variant0.gltf"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.6",
+  "Category": "Games",
+  "Description": "Sky Islands: first-person construction and resource sandbox development project",
+  "Modules": [{"Name": "SkyIslands", "Type": "Runtime", "LoadingPhase": "Default"}],
+  "Plugins": [
+    {"Name": "ProceduralMeshComponent", "Enabled": true},
+    {"Name": "PythonScriptPlugin", "Enabled": true, "TargetAllowList": ["Editor"]},
+    {"Name": "EditorScriptingUtilities", "Enabled": true, "TargetAllowList": ["Editor"]},
+    {"Name": "InterchangeEditor", "Enabled": true, "TargetAllowList": ["Editor"]}
+  ]
+}

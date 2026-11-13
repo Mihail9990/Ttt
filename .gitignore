@@ -5,3 +5,15 @@ legion_game/**/*.uid
 legion_game/tools/__pycache__/
 dist/
 preview/
+**/__pycache__/
+*.pyc
+sky_islands/Binaries/
+sky_islands/Intermediate/
+sky_islands/DerivedDataCache/
+sky_islands/Saved/
+sky_islands/Artifacts/
+sky_islands/.vs/
+sky_islands/*.sln
+sky_islands/Content/Art/
+sky_islands/Content/SkyIslands/Art/
+sky_islands/Content/Maps/SkyWorld.umap

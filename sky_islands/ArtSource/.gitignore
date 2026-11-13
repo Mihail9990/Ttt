@@ -1,0 +1,4 @@
+# Reproducible source assets: fetched from pinned official URLs by Tools/fetch_assets.py.
+PolyHaven/
+__pycache__/
+*.part

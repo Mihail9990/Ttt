@@ -1,0 +1,27 @@
+name: Sky Islands source checks
+on:
+  push:
+    branches: [sky-islands]
+    paths: ['sky_islands/**', '.github/workflows/sky-islands-checks.yml']
+  pull_request:
+    paths: ['sky_islands/**', '.github/workflows/sky-islands-checks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate source and project files
+        run: python sky_islands/Tools/validate_project.py
+      - name: Run portable simulation tests
+        run: bash sky_islands/Tests/run_core_tests.sh
+      - name: Run portable terrain tests
+        run: bash sky_islands/Tests/run_terrain_tests.sh
+      - name: Validate build orchestration failure handling
+        run: python -m unittest discover -s sky_islands/Tests -p 'test_build*.py'
