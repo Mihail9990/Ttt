@@ -1,0 +1,57 @@
+name: Sky Islands Unreal build (installed UE 5.6)
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Build target'
+        type: choice
+        options: [editor, android, windows, server]
+        default: editor
+      import_assets:
+        description: 'Download and import the pinned CC0 starter art'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: sky-islands-unreal-build
+  cancel-in-progress: false
+jobs:
+  unreal:
+    # Must be a trusted, owner-configured runner with legitimately installed UE 5.6.
+    # This workflow intentionally never runs from pull_request events.
+    runs-on: [self-hosted, Windows, X64, ue5-6]
+    timeout-minutes: 120
+    env:
+      UE56_ROOT: ${{ vars.UE56_ROOT }}
+      SKY_BUILD_TARGET: ${{ inputs.target }}
+      SKY_IMPORT_ASSETS: ${{ inputs.import_assets }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify runner setup and compile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:UE56_ROOT) { throw 'Set the UE56_ROOT repository variable to the installed UE 5.6 directory.' }
+          $buildArgs = @('sky_islands/Tools/build.py', '--engine', $env:UE56_ROOT, '--target', $env:SKY_BUILD_TARGET)
+          if ($env:SKY_IMPORT_ASSETS -ne 'true') { $buildArgs += '--skip-assets' }
+          python @buildArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sky-Islands-Build-Logs
+          path: sky_islands/Artifacts/BuildLogs/**
+          if-no-files-found: ignore
+      - name: Upload real packaged build
+        if: success() && inputs.target != 'editor'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sky-Islands-${{ inputs.target }}
+          path: sky_islands/Artifacts/${{ inputs.target }}/**
+          if-no-files-found: error
+          retention-days: 14
