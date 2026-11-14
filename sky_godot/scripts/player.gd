@@ -198,7 +198,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		part_size.z = minf(1.0, part_size.z + 0.01)
 	elif event.is_action_pressed("height_down"):
 		part_size.z = maxf(0.01, part_size.z - 0.01)
-	for index: int in range(6):
+	for index: int in range(TOOLS.size()):
 		if event.is_action_pressed("tool_%d" % (index + 1)):
 			set_tool(TOOLS[index])
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F:
@@ -255,8 +255,9 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, direction.z * speed, delta * 22)
 		if not is_on_floor():
 			velocity.y -= 16.5 * delta
-			if glider:
-				velocity.y = maxf(velocity.y, -1.8)
+			# Keep ordinary falling within the authoritative pose speed budget.
+			# Gliding uses its own slower descent cap.
+			velocity.y = maxf(velocity.y, -1.8 if glider else -22.0)
 		elif _jump_queued:
 			velocity.y = 6.2
 		_jump_queued = false

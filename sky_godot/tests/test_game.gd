@@ -83,6 +83,13 @@ func run() -> void:
 	await physics_frame
 	check(game._buy_defense(1,"turret"),"optional defenseplacement anywhere")
 	check(game.defense_nodes.size()==1,"functional defense actor")
+	game.local_player.global_position = Vector3(0,-61,0)
+	game._physics_process(0.016)
+	check(game.local_player.global_position.y>0,"falling out of sky returns player home")
+	var remote: SkyPlayer = game._ensure_player(2,false)
+	check(int(game.island_owners[2])==2,"joining player receives own island")
+	game.damage_player(2,100,1)
+	check(remote.global_position.distance_to(game._home_spawn(2))<0.01,"PvP respawn on own island")
 	var state: Dictionary = game._world_state()
 	var balance_before: int = game.sim.balance(1)
 	check(game._apply_state(JSON.parse_string(JSON.stringify(state))),"full world JSON roundtrip")

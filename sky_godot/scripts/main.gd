@@ -198,6 +198,8 @@ func _physics_process(delta: float) -> void:
 	if not is_authority(): return
 	save_clock += delta
 	state_clock += delta
+	for id in players:
+		if players[id].global_position.y < -60.0: damage_player(int(id),100.0,0)
 	for id in defense_nodes:
 		defense_nodes[id].server_tick(delta)
 	if local_player != null and pilot_island > 0:
@@ -512,7 +514,7 @@ func damage_player(id: int, amount: float, _attacker: int) -> void:
 	health[id] = maxf(0,float(health.get(id,100.0))-amount)
 	if float(health[id])<=0:
 		health[id] = 100.0
-		var spawn := Vector3(-6,4,4)
+		var spawn := _home_spawn(id)
 		players[id].global_position = spawn
 		players[id].velocity = Vector3.ZERO
 		if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
@@ -871,6 +873,13 @@ func _number(value: Variant) -> bool:
 
 func _whole(value: Variant, low: int, high: int) -> bool:
 	return _number(value) and float(value)>=low and float(value)<=high and floor(float(value))==float(value)
+
+func _home_spawn(id: int) -> Vector3:
+	for island_id in island_owners:
+		if int(island_owners[island_id])==id:
+			var land: SkyIsland = islands[island_id]
+			return land.global_position+Vector3(-4,land.top_height(-4,4)+3.0,4)
+	return Vector3(-4,4,4)
 
 func _house_release(id: int) -> bool:
 	var hit := _trace(id)
