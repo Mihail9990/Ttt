@@ -1,0 +1,36 @@
+{
+  "engine": "MotionForge Train",
+  "version": "0.3.0",
+  "title": "Из окна поезда: горная долина и хвойный лес",
+  "width": 1280,
+  "height": 720,
+  "fps": 24,
+  "frames": 2016,
+  "duration_seconds": 84.0,
+  "world_width": 5060,
+  "sections": 3,
+  "camera_keys": [
+    {
+      "time": 0,
+      "u": 0
+    },
+    {
+      "time": 60,
+      "u": 0.64
+    },
+    {
+      "time": 84,
+      "u": 1
+    }
+  ],
+  "time_crossfades": 0,
+  "landscape_loops": 0,
+  "near_verge_texture_loops": true,
+  "render_seconds": 38.951,
+  "peak_renderer_rss_mb": 130.84,
+  "peak_encoder_rss_mb": 158.96,
+  "video_bytes": 13915757,
+  "checked_date": "2026-11-14",
+  "tests_passed": 27,
+  "image_generation_time_excluded": true
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Из окна поезда: горная долина и хвойный лес",
+  "width": 1280,
+  "height": 720,
+  "fps": 24,
+  "seconds": 84,
+  "sections": [
+    "../assets/train/01_mountains.jpg",
+    "../assets/train/02_mountains.jpg",
+    "../assets/train/03_forest.jpg"
+  ],
+  "panorama": "../assets/train/route_panorama.jpg",
+  "foreground": true,
+  "window": true,
+  "camera_keys": [
+    {"time": 0, "u": 0},
+    {"time": 60, "u": 0.64},
+    {"time": 84, "u": 1}
+  ]
+}

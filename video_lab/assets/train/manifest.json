@@ -1,0 +1,32 @@
+{
+  "created": "2026-11-14",
+  "assets": [
+    {
+      "file": "01_mountains.jpg",
+      "origin": "ChatGPT built-in image generation; rightward outpainting for sections 2 and 3",
+      "sha256": "058bd4c958ca70afac58a723d94bea3b43f030765af546d8051e1f3658675483",
+      "bytes": 1046331
+    },
+    {
+      "file": "02_mountains.jpg",
+      "origin": "ChatGPT built-in image generation; rightward outpainting for sections 2 and 3",
+      "sha256": "7081361a713e58bf634e9921b07522430f2670b30944214ae43459d17c426bad",
+      "bytes": 1030060
+    },
+    {
+      "file": "03_forest.jpg",
+      "origin": "ChatGPT built-in image generation; rightward outpainting for sections 2 and 3",
+      "sha256": "b06aefbc1cca3696829114dadd7a4833b52571aa0689125cb021a0badcd9db77",
+      "bytes": 1072319
+    },
+    {
+      "file": "route_panorama.jpg",
+      "origin": "assembled from overlapping generated sections",
+      "sha256": "49523a2fb5900e714d00c9cee634b1a70d059ff04c840267aa890a4834d250a1",
+      "bytes": 1926469
+    }
+  ],
+  "prompt_directory": "prompts/train",
+  "shared_fraction_requested": 0.35,
+  "time_crossfades": 0
+}

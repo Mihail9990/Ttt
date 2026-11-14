@@ -25,7 +25,7 @@ from PIL import Image, ImageOps
 import motionforge as core
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def load_rgba(path):

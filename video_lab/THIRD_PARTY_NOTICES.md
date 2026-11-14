@@ -26,6 +26,16 @@ used as a reference. The atlas retains transparency. JPEG/WebP versions are
 used for repository size; their asset hashes are recorded in assets/manifest.json.
 These images were created externally before the local video render.
 
+## Train panorama assets
+
+The three adjoining mountain/forest sections were created with ChatGPT's
+built-in image-generation tool on 2026-11-14. Sections 2 and 3 are rightward
+outpaintings using the preceding section's rightmost 35% as the edit target.
+The resulting route panorama was assembled locally from shared geographic
+features. Prompts are in prompts/train/; provenance and hashes are recorded in
+assets/train/manifest.json. The train-window rim is generated procedurally.
+No real route or third-party reference photograph is represented.
+
 ## Runtime dependencies
 
 NumPy, Pillow, OpenCV and ONNX Runtime retain their respective licenses and
