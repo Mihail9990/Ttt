@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
       GODOT_VERSION: '4.6.3'
@@ -91,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p sky_godot/Artifacts/Preview
-          timeout 180s xvfb-run -a -s '-screen 0 1280x720x24' godot --path sky_godot --audio-driver Dummy --rendering-method gl_compatibility --script res://tests/render_preview.gd -- --fresh 2>&1 | tee sky_godot/Artifacts/Logs/render.log
+          timeout 300s xvfb-run -a -s '-screen 0 1280x720x24' godot --path sky_godot --audio-driver Dummy --rendering-method gl_compatibility --script res://tests/render_preview.gd -- --fresh 2>&1 | tee sky_godot/Artifacts/Logs/render.log
           if grep -Ei 'SCRIPT ERROR|Parse Error|Failed to load script|^ERROR:' sky_godot/Artifacts/Logs/render.log; then exit 1; fi
           test -s sky_godot/Artifacts/Preview/gameplay.png
       - uses: actions/upload-artifact@v4

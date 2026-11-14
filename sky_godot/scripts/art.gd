@@ -40,9 +40,17 @@ static func material(kind: String) -> Material:
 		result.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
 		result.normal_texture = _texture(folder + "normal_gl.png")
 		result.normal_enabled = result.normal_texture != null
-		result.normal_scale = 0.85
+		result.normal_scale = 0.45 if key == "ground" else 0.65
 		if result.albedo_texture != null:
 			result.albedo_color = Color.WHITE
+		if key == "ground":
+			result.albedo_color = Color(0.79, 0.77, 0.70)
+			result.roughness = 1.0
+			result.metallic_specular = 0.2
+		elif key == "rock":
+			result.albedo_color = Color(0.84, 0.85, 0.84)
+			result.roughness = 0.97
+			result.metallic_specular = 0.28
 		if key in ["ground", "rock"]:
 			# Metre-based mapping avoids stretched textures on mined cave surfaces.
 			result.uv1_triplanar = true
@@ -125,24 +133,24 @@ static func build_environment(parent: Node3D) -> void:
 	sky.sky_material = sky_material
 	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	environment.ambient_light_energy = 0.5
+	environment.ambient_light_energy = 0.38
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	environment.tonemap_exposure = 1.0
+	environment.tonemap_exposure = 0.82
 	environment.fog_enabled = true
 	environment.fog_mode = Environment.FOG_MODE_DEPTH
 	environment.fog_depth_begin = 85.0
 	environment.fog_depth_end = 550.0
 	environment.fog_depth_curve = 1.6
 	environment.fog_light_color = Color("c0d0d9")
-	environment.fog_light_energy = 0.75
-	environment.fog_sky_affect = 0.25
+	environment.fog_light_energy = 0.6
+	environment.fog_sky_affect = 0.18
 	world.environment = environment
 	parent.add_child(world)
 	var sun := DirectionalLight3D.new()
 	sun.name = "MorningSun"
 	sun.rotation_degrees = Vector3(-31.0, -28.0, 0.0)
 	sun.light_color = Color("ffe4bc")
-	sun.light_energy = 1.55
+	sun.light_energy = 1.05
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 95.0
 	sun.directional_shadow_blend_splits = true

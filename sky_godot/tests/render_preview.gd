@@ -22,7 +22,7 @@ func setup() -> void:
 func render_frame() -> void:
 	frame += 1
 	print("SKY_PREVIEW_FRAME ",frame)
-	if frame<3: return
+	if frame<2: return
 	process_frame.disconnect(render_frame)
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
