@@ -1,0 +1,12 @@
+{
+  "name": "Depth Anything V2 Small, ONNX INT8 conversion",
+  "upstream": "https://github.com/DepthAnything/Depth-Anything-V2",
+  "original_weights": "https://huggingface.co/depth-anything/Depth-Anything-V2-Small",
+  "onnx_conversion": "https://huggingface.co/onnx-community/depth-anything-v2-small",
+  "revision": "4472b7362082ad9968fee890ca0f1e5aca36b93d",
+  "file": "depth_anything_v2_small_int8.onnx",
+  "size_bytes": 27258801,
+  "sha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+  "license": "Apache-2.0",
+  "purpose": "Relative monocular depth estimation; does not generate video or new character poses."
+}

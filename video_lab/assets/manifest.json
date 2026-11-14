@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "file": "forest_path.jpg",
+      "role": "background",
+      "origin": "ChatGPT built-in image generation",
+      "created": "2026-11-14",
+      "prompt": "prompts/forest_background.txt",
+      "sha256": "208a946075d5e0d4c594e8bb78b9c966f9e46f17621fd11efa552ba8f7d89a6a",
+      "bytes": 766504
+    },
+    {
+      "file": "kitten_walk_atlas.webp",
+      "role": "character_walk_atlas_4x4",
+      "origin": "ChatGPT built-in image generation",
+      "created": "2026-11-14",
+      "prompt": "prompts/kitten_atlas.txt",
+      "sha256": "9b647ad8664bff12dd0533dd9033d723304916381b5d78a0cd332c2f811fed2d",
+      "bytes": 854100
+    }
+  ]
+}

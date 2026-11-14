@@ -1,0 +1,28 @@
+{
+  "engine": "MotionForge Studio",
+  "version": "0.2.0",
+  "mode": "generated-poses-cpu-compositor",
+  "title": "Прогулка котёнка",
+  "width": 1280,
+  "height": 720,
+  "fps": 24,
+  "frames": 192,
+  "duration_seconds": 8.0,
+  "tracks": 1,
+  "pose_counts": [
+    16
+  ],
+  "optical_flow_pairs_computed": 64,
+  "neural_depth_inferences": 1,
+  "neural_depth_cache_hits": 0,
+  "render_seconds": 5.646,
+  "peak_renderer_rss_mb": 334.24,
+  "peak_encoder_rss_mb": 296.86,
+  "image_generation": "External ChatGPT image generation; assets supplied before rendering",
+  "local_video_diffusion_model": false,
+  "video_bytes": 1667873,
+  "preview_gif_bytes": 2887639,
+  "checked_date": "2026-11-14",
+  "tests_passed": 19,
+  "external_image_generation_seconds_excluded": true
+}
