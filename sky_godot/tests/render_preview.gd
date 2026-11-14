@@ -21,8 +21,10 @@ func setup() -> void:
 	process_frame.connect(render_frame)
 func render_frame() -> void:
 	frame += 1
-	if frame<45: return
-	RenderingServer.force_draw(false)
+	print("SKY_PREVIEW_FRAME ",frame)
+	if frame<3: return
+	process_frame.disconnect(render_frame)
+	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
 	if image==null or image.is_empty():
 		push_error("No rendered viewport image")
