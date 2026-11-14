@@ -17,3 +17,10 @@ sky_islands/*.sln
 sky_islands/Content/Art/
 sky_islands/Content/SkyIslands/Art/
 sky_islands/Content/Maps/SkyWorld.umap
+
+# Godot Sky Islands: regenerated imports, reviewed downloaded art and local build tools
+sky_godot/.godot/
+sky_godot/assets/
+sky_godot/.local-tools/
+sky_godot/Artifacts/
+sky_godot/**/*.import

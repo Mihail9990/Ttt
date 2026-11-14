@@ -1,0 +1,108 @@
+name: Sky Islands Godot Android
+on:
+  push:
+    branches: [sky-islands-godot]
+    paths: ['sky_godot/**', 'sky_islands/ArtSource/**', 'sky_islands/Tools/fetch_assets.py', '.github/workflows/sky-godot.yml']
+  pull_request:
+    paths: ['sky_godot/**', '.github/workflows/sky-godot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sky-godot-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GODOT_VERSION: '4.6.3'
+      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/legion_game/signing/legion-test.jks
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: legiondebug
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install asset preparation dependency
+        run: python -m pip install 'Pillow==11.3.0'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android tools
+        run: sdkmanager 'platform-tools' 'build-tools;35.0.1' 'platforms;android-35'
+      - name: Download official Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          EDITOR="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          RELEASE="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          curl -fL --retry 4 -o "/tmp/$EDITOR" "$RELEASE/$EDITOR"
+          curl -fL --retry 4 -o /tmp/SHA512-SUMS.txt "$RELEASE/SHA512-SUMS.txt"
+          (cd /tmp && sha512sum --ignore-missing --check SHA512-SUMS.txt)
+          unzip -q "/tmp/$EDITOR" -d /tmp/sky-godot-editor
+          sudo install -m 755 "/tmp/sky-godot-editor/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          godot --headless --version
+      - uses: actions/cache@v4
+        id: templates
+        with:
+          path: ~/.local/share/godot/export_templates/4.6.3.stable
+          key: sky-godot-official-android-4.6.3-v1
+      - name: Download and verify Android templates
+        if: steps.templates.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          RELEASE="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          curl -fL --retry 4 -o "/tmp/$FILE" "$RELEASE/$FILE"
+          (cd /tmp && sha512sum --ignore-missing --check SHA512-SUMS.txt)
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -p "/tmp/$FILE" templates/android_debug.apk > "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_debug.apk"
+          unzip -p "/tmp/$FILE" templates/android_release.apk > "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_release.apk"
+          unzip -p "/tmp/$FILE" templates/version.txt > "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/version.txt"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            sky_islands/ArtSource/PolyHaven
+            sky_godot/assets
+          key: sky-godot-art-${{ hashFiles('sky_islands/ArtSource/manifest.json', 'sky_godot/tools/prepare_assets.py') }}
+      - name: Test build failure handling
+        run: python -m unittest discover -s sky_godot/tests -p 'test_build_android.py'
+      - name: Import, test and export real APK
+        run: python sky_godot/tools/build_android.py --sdk "$ANDROID_HOME" --java "$JAVA_HOME"
+      - name: Install software graphics tools
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
+      - name: Render actual gameplay preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p sky_godot/Artifacts/Preview
+          timeout 180s xvfb-run -a -s '-screen 0 1280x720x24' godot --path sky_godot --rendering-method gl_compatibility --script res://tests/render_preview.gd 2>&1 | tee sky_godot/Artifacts/Logs/render.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Failed to load script|^ERROR:' sky_godot/Artifacts/Logs/render.log; then exit 1; fi
+          test -s sky_godot/Artifacts/Preview/gameplay.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sky-Islands-Godot-Android-${{ github.run_number }}
+          path: sky_godot/Artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sky-Islands-Actual-Gameplay-${{ github.run_number }}
+          path: sky_godot/Artifacts/Preview/*.png
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Sky-Islands-Godot-Logs-${{ github.run_number }}
+          path: |
+            sky_godot/Artifacts/Logs
+            sky_godot/Artifacts/BuildReport.json
+          if-no-files-found: ignore
+          retention-days: 14
