@@ -1,0 +1,145 @@
+; Sky Islands — reproducible Godot 4.6.3 project.
+config_version=5
+
+[application]
+config/name="Небесные острова"
+config/icon="res://icon.svg"
+config/description="First-person sky-island sandbox: excavate, gather, build and trade."
+config/version="0.2.0"
+config/quit_on_go_back=false
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=0
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+textures/default_filters/use_nearest_mipmap_filter=false
+anti_aliasing/quality/msaa_3d=1
+limits/time/time_rollover_secs=3600
+
+[input_devices]
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=true
+
+[input]
+move_forward={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":87)]
+}
+move_back={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":83)]
+}
+move_left={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":65)]
+}
+move_right={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":68)]
+}
+jump={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":32)]
+}
+use={
+"deadzone": 0.15,
+"events": [Object(InputEventMouseButton,"button_index":1)]
+}
+alt_use={
+"deadzone": 0.15,
+"events": [Object(InputEventMouseButton,"button_index":2)]
+}
+interact={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":69)]
+}
+market={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":77)]
+}
+save={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":4194336)]
+}
+rotate={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":82)]
+}
+pitch={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":81)]
+}
+roll={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":67)]
+}
+length_up={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":61)]
+}
+length_down={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":45)]
+}
+width_up={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":93)]
+}
+width_down={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":91)]
+}
+height_up={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":39)]
+}
+height_down={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":59)]
+}
+tool_next={
+"deadzone": 0.15,
+"events": [Object(InputEventMouseButton,"button_index":4)]
+}
+tool_previous={
+"deadzone": 0.15,
+"events": [Object(InputEventMouseButton,"button_index":5)]
+}
+tool_1={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":49)]
+}
+tool_2={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":50)]
+}
+tool_3={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":51)]
+}
+tool_4={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":52)]
+}
+tool_5={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":53)]
+}
+tool_6={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":54)]
+}
+tool_7={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":55)]
+}
