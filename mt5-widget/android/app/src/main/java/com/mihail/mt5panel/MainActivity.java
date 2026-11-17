@@ -14,7 +14,7 @@ public class MainActivity extends Activity {
     TextView status;
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
-        LinearLayout box=new LinearLayout(this);box.setOrientation(1);box.setPadding(24,60,24,24);box.setBackgroundColor(Color.rgb(17,21,27));
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,60,24,24);box.setBackgroundColor(Color.rgb(17,21,27));
         ScrollView scroll=new ScrollView(this);scroll.addView(box);setContentView(scroll);
         TextView title=new TextView(this);title.setText("MT5 • Боковая панель");title.setTextSize(24);box.addView(title);
         TextView help=new TextView(this);help.setText("Панель поверх Bybit. Позиции берутся из MT5 на VPS, а не с экрана телефона. Счёт должен совпадать.\n\nРасстояния TP/SL задаются в единицах цены от входа: 0.25 = движение цены на 0.25. Пустое поле не меняет существующий уровень.\n\nВведи адрес и ключ своего сервиса. Ключ сохраняется на этом телефоне в зашифрованном виде. Нужен действующий HTTPS-сертификат.");box.addView(help);
