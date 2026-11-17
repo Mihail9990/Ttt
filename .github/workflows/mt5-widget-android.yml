@@ -1,0 +1,40 @@
+name: MT5 Widget Android
+on:
+  push:
+    branches: [mt5-widget]
+    paths: ['mt5-widget/android/**', '.github/workflows/mt5-widget-android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - name: Install Android tools
+        run: sdkmanager "platform-tools" "build-tools;35.0.0" "platforms;android-35"
+      - name: Build APK and lint
+        working-directory: mt5-widget/android
+        run: bash gradlew --no-daemon assembleDebug lintDebug
+      - name: Verify APK signature
+        run: |
+          test -s mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MT5-Widget-Debug-APK
+          path: mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MT5-Widget-Lint
+          path: mt5-widget/android/app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
