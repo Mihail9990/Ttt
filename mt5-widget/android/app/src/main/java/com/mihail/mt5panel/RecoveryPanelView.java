@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
@@ -19,6 +21,8 @@ final class RecoveryPanelView extends LinearLayout {
     private final TextView status,summary;
     private final EditText[] price=new EditText[2],volume=new EditText[2];
     private final Spinner[] side=new Spinner[2];
+    private final EditText initialSl,reentry;
+    private boolean distancesEdited,distancesLoaded;
     private final LinearLayout second;
     private final Button place,cancel,close1,close2,refresh;
     private boolean two,busy,valid,disposed,active;
@@ -28,6 +32,14 @@ final class RecoveryPanelView extends LinearLayout {
         super(c);setOrientation(VERTICAL);
         addView(label("RECOVERY • ТОЛЬКО СИМУЛЯЦИЯ",19));
         addView(label("Реальные ордера не отправляются. VPS-сервер RECOVERY должен быть отдельно настроен.",14));
+        addView(label("Настройки расстояний (единицы цены)",17));
+        addView(label("Исходный SL от цены входа",14));
+        initialSl=field("Например 0.70",RecoveryDistances.DEFAULT);addView(initialSl);
+        addView(label("Повторный триггер от SL поддержки",14));
+        reentry=field("Например 0.70",RecoveryDistances.DEFAULT);addView(reentry);
+        TextWatcher edited=new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){} public void onTextChanged(CharSequence s,int start,int before,int count){distancesEdited=true;} public void afterTextChanged(Editable e){}};
+        initialSl.addTextChangedListener(edited);reentry.addTextChangedListener(edited);
+        addView(label("Это независимые настройки. Применяются вместе с подтверждением новых диапазонов; отдельное изменение действующих SL не выполняется.",13));
         LinearLayout choices=new LinearLayout(c);
         button(choices,"1 диапазон",()->{two=false;secondVisibility();});
         button(choices,"2 диапазона",()->{two=true;secondVisibility();});addView(choices);
@@ -52,7 +64,17 @@ final class RecoveryPanelView extends LinearLayout {
     private EditText field(String hint,String value){EditText v=new EditText(getContext());v.setHint(hint);v.setText(value);v.setTextColor(Color.WHITE);v.setHintTextColor(Color.LTGRAY);v.setSingleLine();v.setTextSize(16);v.setTag(Float.valueOf(16));v.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);v.setFilterTouchesWhenObscured(true);return v;}
     private void secondVisibility(){second.setVisibility(two?VISIBLE:GONE);}
     private double positive(EditText v){double n=Double.parseDouble(v.getText().toString().trim().replace(',','.'));if(!Double.isFinite(n)||n<=0)throw new IllegalArgumentException();return n;}
-    private void placeRanges(){try{JSONArray ranges=new JSONArray();for(int i=0;i<(two?2:1);i++)ranges.put(new JSONObject().put("id",String.valueOf(i+1)).put("price",positive(price[i])).put("volume",positive(volume[i])).put("side",side[i].getSelectedItem().toString()));command("/api/recovery/ranges",new JSONObject().put("ranges",ranges));}catch(Exception e){status.setText("Введи положительные цену и объём для каждого выбранного диапазона.");}}
+    private void placeRanges(){
+        RecoveryDistances distances;
+        try{distances=new RecoveryDistances(initialSl.getText().toString(),reentry.getText().toString());}
+        catch(IllegalArgumentException e){status.setText("Укажи две положительные дистанции: исходный SL и повторный триггер от SL поддержки. Например 0.70 и 1.20.");return;}
+        try{
+            JSONArray ranges=new JSONArray();for(int i=0;i<(two?2:1);i++)ranges.put(new JSONObject().put("id",String.valueOf(i+1)).put("price",positive(price[i])).put("volume",positive(volume[i])).put("side",side[i].getSelectedItem().toString()));
+            command("/api/recovery/ranges",new JSONObject().put("ranges",ranges)
+                .put("initial_sl_distance",Double.parseDouble(distances.initialSl))
+                .put("reentry_distance",Double.parseDouble(distances.supportReentry)));
+        }catch(Exception e){status.setText("Введи положительные цену и объём для каждого выбранного диапазона.");}
+    }
     private void command(String path,JSONObject body){if(!valid||busy)return;try{body.put("request_id",UUID.randomUUID().toString());fetch(path,body);}catch(JSONException e){status.setText("Не удалось подготовить запрос");}}
     private static boolean simulation(JSONObject s){return "simulation".equals(s.optString("mode"))&&s.has("live_trading")&&!s.optBoolean("live_trading",true);}
     private static JSONObject unwrap(JSONObject result){JSONObject s=result.optJSONObject("state");return s==null?result:s;}
@@ -65,13 +87,21 @@ final class RecoveryPanelView extends LinearLayout {
     void dispose(){disposed=true;main.removeCallbacksAndMessages(null);worker.shutdown();}
     void setScale(float scale){scaleChildren(this,scale);}
     private void scaleChildren(View v,float scale){if(v instanceof TextView&&v.getTag() instanceof Float)((TextView)v).setTextSize(((Float)v.getTag())*scale);if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++)scaleChildren(g.getChildAt(i),scale);}}
-    private void enabled(){boolean ready=valid&&!busy;place.setEnabled(ready);refresh.setEnabled(!busy);cancel.setEnabled(ready&&state!=null&&state.optBoolean("can_cancel_ranges",false));close1.setEnabled(false);close2.setEnabled(false);}
+    private void enabled(){boolean ready=valid&&!busy;place.setEnabled(ready&&state!=null&&state.optBoolean("can_cancel_ranges",false));refresh.setEnabled(!busy);cancel.setEnabled(ready&&state!=null&&state.optBoolean("can_cancel_ranges",false));close1.setEnabled(false);close2.setEnabled(false);}
     private void render(){
+        JSONObject settings=state.optJSONObject("settings");
+        if(!distancesLoaded&&settings!=null){
+            if(!distancesEdited){initialSl.setText(settings.optString("initial_sl_distance",RecoveryDistances.DEFAULT));reentry.setText(settings.optString("reentry_distance",RecoveryDistances.DEFAULT));distancesEdited=false;}
+            distancesLoaded=true;
+        }
         StringBuilder b=new StringBuilder("Состояние VPS (демо)\n");
+        if(settings!=null)b.append("Настройки сервера: SL ").append(settings.optString("initial_sl_distance"))
+            .append(" · повторный триггер ").append(settings.optString("reentry_distance")).append("\n");
         JSONArray ranges=state.optJSONArray("ranges");
         if(ranges==null||ranges.length()==0)b.append("Нет диапазонов. Ожидание.\n");
         else for(int i=0;i<ranges.length();i++){JSONObject r=ranges.optJSONObject(i);if(r==null)continue;
             b.append("\nДиапазон №").append(r.optString("id")).append(" · ").append(r.optString("side")).append(" · ").append(r.optString("price"))
+                .append("\nSL: ").append(r.optString("initial_sl_distance","—")).append(" · повтор: ").append(r.optString("reentry_distance","—"))
                 .append("\nОбъём: ").append(r.optString("volume")).append("  Убытки: ").append(r.optString("loss"))
                 .append("\nРезультат: ").append(r.optString("realized_net")).append("\n");}
         for(String key:new String[]{"positions","orders","loss_history"}){b.append("\n").append(key.equals("positions")?"Позиции":key.equals("orders")?"Триггеры":"История убытков").append(":\n");JSONArray a=state.optJSONArray(key);if(a==null||a.length()==0)b.append("Нет\n");else for(int i=0;i<Math.min(a.length(),30);i++)b.append(a.opt(i)).append("\n");}
