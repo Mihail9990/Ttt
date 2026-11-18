@@ -5,9 +5,13 @@ import java.math.BigDecimal;
 /** Two independent price distances. No unit conversion or coupling. */
 final class RecoveryDistances {
     static final String DEFAULT="0.70";
+    static final String MIN_INITIAL_SL="0.60";
     final String initialSl, supportReentry;
     RecoveryDistances(String initialSl,String supportReentry){
-        this.initialSl=positive(initialSl);this.supportReentry=positive(supportReentry);
+        this.initialSl=positive(initialSl);
+        if(new BigDecimal(this.initialSl).compareTo(new BigDecimal(MIN_INITIAL_SL))<0)
+            throw new IllegalArgumentException("Исходный SL должен быть не меньше 0,60. Повторный триггер настраивается отдельно.");
+        this.supportReentry=positive(supportReentry);
     }
     static String positive(String text){
         if(text==null)throw new IllegalArgumentException("Missing distance");

@@ -33,7 +33,7 @@ final class RecoveryPanelView extends LinearLayout {
         addView(label("RECOVERY • ТОЛЬКО СИМУЛЯЦИЯ",19));
         addView(label("Реальные ордера не отправляются. VPS-сервер RECOVERY должен быть отдельно настроен.",14));
         addView(label("Настройки расстояний (единицы цены)",17));
-        addView(label("Исходный SL от цены входа",14));
+        addView(label("Исходный SL от цены входа (минимум 0,60)",14));
         initialSl=field("Например 0.70",RecoveryDistances.DEFAULT);addView(initialSl);
         addView(label("Повторный триггер от SL поддержки",14));
         reentry=field("Например 0.70",RecoveryDistances.DEFAULT);addView(reentry);
@@ -67,7 +67,7 @@ final class RecoveryPanelView extends LinearLayout {
     private void placeRanges(){
         RecoveryDistances distances;
         try{distances=new RecoveryDistances(initialSl.getText().toString(),reentry.getText().toString());}
-        catch(IllegalArgumentException e){status.setText("Укажи две положительные дистанции: исходный SL и повторный триггер от SL поддержки. Например 0.70 и 1.20.");return;}
+        catch(IllegalArgumentException e){status.setText("Исходный SL: минимум 0,60. Повторный триггер от SL поддержки: любое положительное значение. Например 0,70 и 0,40.");return;}
         try{
             JSONArray ranges=new JSONArray();for(int i=0;i<(two?2:1);i++)ranges.put(new JSONObject().put("id",String.valueOf(i+1)).put("price",positive(price[i])).put("volume",positive(volume[i])).put("side",side[i].getSelectedItem().toString()));
             command("/api/recovery/ranges",new JSONObject().put("ranges",ranges)
