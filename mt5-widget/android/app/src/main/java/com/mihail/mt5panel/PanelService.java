@@ -7,95 +7,107 @@ import android.view.*;
 import android.widget.*;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.provider.Settings;
-import android.text.InputType;
-import org.json.*;
-import java.util.*;
-import java.util.concurrent.*;
 
+/** Overlay shell only. No trading commands are issued by gestures or sizing. */
 public class PanelService extends Service {
     private final Handler main=new Handler(Looper.getMainLooper());
-    private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    private SharedPreferences.OnSharedPreferenceChangeListener sizeListener;
-    private WindowManager wm;private View current;private boolean expanded,busy,destroyed;
-    private TextView status,details,account;private Spinner positions;private EditText tp,sl;private Button apply,refresh;
-    private JSONArray rows=new JSONArray();private JSONObject selected;private Api api;private boolean needsRefresh=true;
+    private WindowManager wm;
+    private View current;
+    private RecoveryPanelView recovery;
+    private boolean expanded,destroyed;
+    private int edge=PanelDockRules.RIGHT;
+    private float anchor=0.5f;
+    private SharedPreferences prefs;
+    private SharedPreferences.OnSharedPreferenceChangeListener listener;
+    private Runnable pendingHold;
     @Override public void onCreate(){
         super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);
-        sizeListener=(prefs,key)->main.post(this::resizePanel);PanelSizePreferences.prefs(this).registerOnSharedPreferenceChangeListener(sizeListener);
-        NotificationManager nm=getSystemService(NotificationManager.class);nm.createNotificationChannel(new NotificationChannel("panel","Боковая панель MT5",NotificationManager.IMPORTANCE_LOW));
+        prefs=PanelSizePreferences.prefs(this);
+        edge=PanelDockRules.edge(prefs.getInt("dock_edge",PanelDockRules.RIGHT));
+        anchor=PanelDockRules.fraction(prefs.getFloat("dock_anchor",0.5f));
+        listener=(p,k)->{if(!"dock_edge".equals(k)&&!"dock_anchor".equals(k))main.post(()->{if(!destroyed)show(expanded);});};
+        prefs.registerOnSharedPreferenceChangeListener(listener);
+        NotificationManager nm=getSystemService(NotificationManager.class);
+        nm.createNotificationChannel(new NotificationChannel("panel","Панель MT5",NotificationManager.IMPORTANCE_LOW));
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,PanelService.class).setAction("STOP"),PendingIntent.FLAG_IMMUTABLE);
-        startForeground(1,new Notification.Builder(this,"panel").setSmallIcon(android.R.drawable.ic_menu_manage).setContentTitle("MT5 • панель включена").setContentText("Ручка справа. Нажми, чтобы открыть настройки.").setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null,"Остановить",stop).build()).build());
-        try{api=new Api(this);}catch(Exception e){stopSelf();return;}
+        startForeground(1,new Notification.Builder(this,"panel").setSmallIcon(android.R.drawable.ic_menu_manage)
+            .setContentTitle("MT5 • панель включена").setContentText("Удерживай значок, чтобы переместить. Нажми для настроек.")
+            .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null,"Остановить",stop).build()).build());
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}show(false);
     }
-    @Override public int onStartCommand(Intent i,int flags,int id){if(i!=null && "STOP".equals(i.getAction()))stopSelf();return START_NOT_STICKY;}
-    @Override public IBinder onBind(Intent intent){return null;}
-    private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
-    private TextView text(String s,float size){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(Color.WHITE);t.setPadding(dp(6),dp(4),dp(6),dp(4));return t;}
-    private Button button(String s){Button b=new Button(this);b.setText(s);b.setFilterTouchesWhenObscured(true);return b;}
-    private int[] panelDimensions(){
-        android.util.DisplayMetrics dm=getResources().getDisplayMetrics();
-        int width=dm.widthPixels,height=dm.heightPixels;
-        if(Build.VERSION.SDK_INT>=30){
-            WindowMetrics metrics=wm.getCurrentWindowMetrics();
-            android.graphics.Insets insets=metrics.getWindowInsets().getInsetsIgnoringVisibility(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout());
-            width=metrics.getBounds().width()-insets.left-insets.right;
-            height=metrics.getBounds().height()-insets.top-insets.bottom;
-        }
-        int usableWidth=Math.max(1,width-dp(16)),usableHeight=Math.max(1,height-dp(16));
-        return new int[]{PanelSizeRules.dimension(usableWidth,dm.density,PanelSizePreferences.width(this),PanelSizeRules.MIN_WIDTH_PERCENT,PanelSizeRules.MAX_WIDTH_PERCENT,240),PanelSizeRules.dimension(usableHeight,dm.density,PanelSizePreferences.height(this),PanelSizeRules.MIN_HEIGHT_PERCENT,PanelSizeRules.MAX_HEIGHT_PERCENT,260)};
+    @Override public int onStartCommand(Intent i,int flags,int id){if(i!=null&&"STOP".equals(i.getAction()))stopSelf();return START_NOT_STICKY;}
+    @Override public IBinder onBind(Intent i){return null;}
+    private int dp(float n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    private float scale(){return PanelDockRules.scale(prefs.getInt("ui_scale",100))/100f;}
+    private TextView text(String value,float size){TextView t=new TextView(this);t.setText(value);t.setTextSize(size*scale());t.setTextColor(Color.WHITE);t.setPadding(dp(8),dp(6),dp(8),dp(6));return t;}
+    private Rect safeBounds(){
+        if(Build.VERSION.SDK_INT>=30){WindowMetrics m=wm.getCurrentWindowMetrics();android.graphics.Insets i=m.getWindowInsets().getInsetsIgnoringVisibility(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout());Rect b=m.getBounds();return new Rect(i.left,i.top,b.width()-i.right,b.height()-i.bottom);}
+        android.util.DisplayMetrics m=new android.util.DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(m);
+        int statusId=getResources().getIdentifier("status_bar_height","dimen","android"),navId=getResources().getIdentifier("navigation_bar_height","dimen","android");
+        int top=statusId>0?getResources().getDimensionPixelSize(statusId):dp(24),bottom=navId>0?getResources().getDimensionPixelSize(navId):dp(48);
+        return new Rect(0,top,m.widthPixels,Math.max(top+1,m.heightPixels-bottom));
     }
-    private void resizePanel(){
-        if(destroyed||!expanded||current==null)return;
-        int[] size=panelDimensions();
-        WindowManager.LayoutParams p=(WindowManager.LayoutParams)current.getLayoutParams();
-        p.width=size[0];p.height=size[1];
-        try{wm.updateViewLayout(current,p);}catch(IllegalArgumentException ignored){}
+    private int[] dimensions(boolean open){
+        Rect b=safeBounds();float density=getResources().getDisplayMetrics().density;
+        if(!open){int shortSide=dp(48*scale()),longSide=dp(68*scale());return new int[]{Math.min(b.width(),edge==PanelDockRules.BOTTOM?longSide:shortSide),Math.min(b.height(),edge==PanelDockRules.BOTTOM?shortSide:longSide)};}
+        return new int[]{PanelSizeRules.dimension(b.width(),density,PanelSizePreferences.width(this),35,95,240),PanelSizeRules.dimension(b.height(),density,PanelSizePreferences.height(this),25,90,260)};
     }
-    @Override public void onConfigurationChanged(android.content.res.Configuration config){super.onConfigurationChanged(config);main.post(this::resizePanel);}
+    private void place(WindowManager.LayoutParams p){Rect b=safeBounds();int[] xy=PanelDockRules.position(edge,anchor,b.width(),b.height(),p.width,p.height);p.x=b.left+xy[0];p.y=b.top+xy[1];}
+    private void cancelHold(){if(pendingHold!=null){main.removeCallbacks(pendingHold);pendingHold=null;}}
     private void show(boolean open){
-        if(destroyed)return;
-        if(current!=null){wm.removeView(current);current=null;}
-        expanded=open;
-        WindowManager.LayoutParams p=new WindowManager.LayoutParams(open?panelDimensions()[0]:dp(26),open?panelDimensions()[1]:dp(100),WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,open?WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL:WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,PixelFormat.TRANSLUCENT);
-        p.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;p.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(open?8:0),dp(4),dp(open?8:0),dp(4));GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(20,26,35));bg.setCornerRadius(dp(18));bg.setStroke(dp(1),Color.rgb(32,201,153));box.setBackground(bg);
-        TextView header=text(open?"MT5 Панель       → свернуть":"‹",open?19:26);header.setGravity(Gravity.CENTER);box.addView(header);header.setOnClickListener(v->show(!expanded));
-        header.setOnTouchListener(new View.OnTouchListener(){float x;public boolean onTouch(View v,android.view.MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){x=e.getRawX();return true;}if(e.getAction()==MotionEvent.ACTION_UP){float dx=e.getRawX()-x;if(Math.abs(dx)<dp(10))v.performClick();else if((!expanded && dx< -dp(20))||(expanded && dx>dp(20)))show(!expanded);return true;}return true;}});
+        if(destroyed)return;cancelHold();
+        if(current!=null){current.animate().cancel();wm.removeView(current);current=null;}
+        expanded=open;if(recovery!=null)recovery.setActive(open);int[] size=dimensions(open);
+        WindowManager.LayoutParams p=new WindowManager.LayoutParams(size[0],size[1],WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|(open?WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL:WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE),PixelFormat.TRANSLUCENT);
+        p.gravity=Gravity.TOP|Gravity.LEFT;place(p);
+        GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(20,26,35));bg.setCornerRadius(dp(16));bg.setStroke(dp(1),Color.rgb(32,201,153));
+        LinearLayout frame=new LinearLayout(this);frame.setOrientation(LinearLayout.VERTICAL);frame.setBackground(bg);
+        String arrow=edge==PanelDockRules.LEFT?">":edge==PanelDockRules.RIGHT?"<":"⌃";
+        TextView header=text(open?"MT5  •  свернуть":arrow,open?18:28);header.setGravity(Gravity.CENTER);header.setMinHeight(dp(48));
+        header.setContentDescription(open?"Свернуть панель":"Открыть панель. Удерживайте для перемещения");
+        frame.addView(header,new LinearLayout.LayoutParams(-1,open?-2:-1));header.setOnClickListener(v->show(!expanded));
+        header.setOnTouchListener(new View.OnTouchListener(){
+            float x,y;int startX,startY;boolean dragging,moved;
+            public boolean onTouch(View v,MotionEvent e){
+                float dx=e.getRawX()-x,dy=e.getRawY()-y;
+                switch(e.getActionMasked()){
+                    case MotionEvent.ACTION_DOWN:
+                        x=e.getRawX();y=e.getRawY();startX=p.x;startY=p.y;dragging=false;moved=false;
+                        if(!expanded){pendingHold=()->{dragging=true;v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);};main.postDelayed(pendingHold,ViewConfiguration.getLongPressTimeout());}return true;
+                    case MotionEvent.ACTION_MOVE:
+                        if(!dragging && Math.hypot(dx,dy)>ViewConfiguration.get(PanelService.this).getScaledTouchSlop()){moved=true;cancelHold();}
+                        if(dragging){Rect b=safeBounds();p.x=Math.max(b.left,Math.min(b.right-p.width,startX+Math.round(dx)));p.y=Math.max(b.top,Math.min(b.bottom-p.height,startY+Math.round(dy)));wm.updateViewLayout(current,p);}return true;
+                    case MotionEvent.ACTION_UP:
+                        cancelHold();
+                        if(dragging){Rect b=safeBounds();float cx=p.x-b.left+p.width/2f,cy=p.y-b.top+p.height/2f;edge=PanelDockRules.nearest(cx,cy,b.width(),b.height());anchor=PanelDockRules.fraction(edge==PanelDockRules.BOTTOM?(p.x-b.left)/(float)Math.max(1,b.width()-p.width):(p.y-b.top)/(float)Math.max(1,b.height()-p.height));prefs.edit().putInt("dock_edge",edge).putFloat("dock_anchor",anchor).apply();show(false);}
+                        else if(PanelDockRules.swipe(edge,expanded,dx,dy,dp(24)))show(!expanded);
+                        else if(!moved && Math.hypot(dx,dy)<dp(10))v.performClick();return true;
+                    case MotionEvent.ACTION_CANCEL:cancelHold();if(dragging)show(false);return true;
+                    default:return true;
+                }
+            }
+        });
         if(open){
-            account=text("Счёт: загрузка…",13);box.addView(account);
-            positions=new Spinner(this);box.addView(positions);details=text("Выбери позицию",13);box.addView(details);
-            tp=new EditText(this);tp.setSingleLine();tp.setHint("TP: расстояние от входа");tp.setTextColor(Color.WHITE);tp.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);tp.setFilterTouchesWhenObscured(true);box.addView(tp);
-            sl=new EditText(this);sl.setSingleLine();sl.setHint("SL: расстояние от входа");sl.setTextColor(Color.WHITE);sl.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);sl.setFilterTouchesWhenObscured(true);box.addView(sl);
-            box.addView(text("Пустое поле = оставить как есть.\n0.25 означает изменение цены на 0.25.",12));
-            LinearLayout buttons=new LinearLayout(this);refresh=button("Обновить");apply=button("Применить");buttons.addView(refresh,new LinearLayout.LayoutParams(0,-2,1));buttons.addView(apply,new LinearLayout.LayoutParams(0,-2,1));box.addView(buttons);
-            status=text("",13);box.addView(status);refresh.setOnClickListener(v->load());apply.setOnClickListener(v->submit());
-            positions.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> p){selected=null;}public void onItemSelected(AdapterView<?> p,View v,int pos,long id){selected=rows.optJSONObject(pos);tp.setText("");sl.setText("");renderPosition();}});
-            box.removeView(header);ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.addView(box);LinearLayout frame=new LinearLayout(this);frame.setOrientation(LinearLayout.VERTICAL);frame.setBackground(bg);box.setBackground(null);frame.addView(header);frame.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));current=frame;try{wm.addView(current,p);}catch(Exception e){stopSelf();return;}load();
-        } else {current=box;try{wm.addView(current,p);}catch(Exception e){stopSelf();}}
+            LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(8),0,dp(8),dp(12));
+            if(recovery==null)recovery=new RecoveryPanelView(this);
+            if(recovery.getParent()!=null)((ViewGroup)recovery.getParent()).removeView(recovery);
+            recovery.setScale(scale());content.addView(recovery);recovery.setActive(true);
+            content.addView(text("Масштаб: "+Math.round(scale()*100)+" %",15));
+            LinearLayout buttons=new LinearLayout(this);
+            addButton(buttons,"−",()->setScale(Math.round(scale()*100)-10));addButton(buttons,"+",()->setScale(Math.round(scale()*100)+10));content.addView(buttons);
+            addButton(content,"Размер и настройки",()->startActivity(new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
+            ScrollView scroll=new ScrollView(this);scroll.addView(content);frame.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        }
+        current=frame;try{wm.addView(current,p);}catch(Exception ex){stopSelf();return;}
+        if(open){if(edge==PanelDockRules.BOTTOM)frame.setTranslationY(p.height);else frame.setTranslationX(edge==PanelDockRules.LEFT?-p.width:p.width);frame.animate().translationX(0).translationY(0).setDuration(180).start();}
     }
-    private void renderPosition(){if(selected==null){details.setText("Открытых позиций нет");return;}details.setText(selected.optString("symbol")+" • "+selected.optString("side")+" • "+selected.optString("volume")+"\nТикет: "+selected.optString("ticket")+"\nВход: "+selected.optString("price_open")+"\nTP: "+selected.optString("tp")+"   SL: "+selected.optString("sl"));}
-    private void enabled(){if(!expanded)return;refresh.setEnabled(!busy);apply.setEnabled(!busy&&!needsRefresh&&selected!=null);positions.setEnabled(!busy);tp.setEnabled(!busy);sl.setEnabled(!busy);}
-    private void load(){
-        if(busy){if(expanded){status.setText("Запрос ещё выполняется. Не отправляй повторно.");enabled();}return;}
-        busy=true;needsRefresh=true;enabled();status.setText("Загрузка позиций…");
-        worker.execute(()->{try{JSONObject health=api.request("/health",null);JSONObject result=api.request("/api/positions",null);main.post(()->{busy=false;if(destroyed||!expanded)return;rows=result.optJSONArray("positions");if(rows==null)rows=new JSONArray();ArrayList<String> labels=new ArrayList<>();for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);labels.add(r.optString("symbol")+" "+r.optString("side")+" #"+r.optString("ticket"));}positions.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,labels));selected=rows.optJSONObject(0);tp.setText("");sl.setText("");JSONObject a=result.optJSONObject("account");String login=a!=null?a.optString("login"):result.optString("account","не указан");String server=a!=null?a.optString("server"):result.optString("server");account.setText("Счёт: "+login+" • "+server+"\nРежим: "+("live".equals(health.optString("mode"))?"РЕАЛЬНЫЕ ИЗМЕНЕНИЯ":"только чтение / dry_run"));needsRefresh=false;renderPosition();status.setText(rows.length()==0?"Открытых позиций нет":"Позиции обновлены. Выбери нужный тикет.");enabled();});}catch(Exception e){main.post(()->{busy=false;if(!destroyed&&expanded){needsRefresh=true;status.setText("Не удалось загрузить позиции. "+safeError(e));enabled();}});}});
-    }
-    private static String safeError(Exception e){if(e instanceof javax.net.ssl.SSLException)return "Ошибка сертификата HTTPS. Проверку безопасности не отключаем.";if(e instanceof java.net.SocketTimeoutException)return "Время ожидания истекло.";if(e instanceof java.io.IOException)return "Проверь соединение с VPS.";return e.getMessage()==null?"Неизвестная ошибка":e.getMessage();}
-    private Double distance(EditText field){String s=field.getText().toString().trim().replace(',','.');if(s.isEmpty())return null;double d=Double.parseDouble(s);if(!Double.isFinite(d)||d<=0)throw new IllegalArgumentException();return d;}
-    private void submit(){
-        if(busy||needsRefresh||selected==null)return;
-        try{
-            Double td=distance(tp),sd=distance(sl);if(td==null&&sd==null){status.setText("Укажи хотя бы одно расстояние");return;}
-            JSONObject chosen=new JSONObject(selected.toString());
-            JSONObject body=new JSONObject().put("request_id",UUID.randomUUID().toString()).put("expected_entry",chosen.getDouble("price_open")).put("expected_symbol",chosen.getString("symbol")).put("expected_side",chosen.getString("side")).put("expected_volume",chosen.getDouble("volume")).put("expected_identifier",chosen.getLong("identifier"));
-            if(td!=null)body.put("tp_distance",td);if(sd!=null)body.put("sl_distance",sd);
-            busy=true;needsRefresh=true;enabled();status.setText("Отправлено в MT5. Ждём проверку…");
-            worker.execute(()->{try{JSONObject result=api.request("/api/positions/"+chosen.getLong("ticket")+"/protection",body);main.post(()->{busy=false;if(destroyed||!expanded)return;String state=result.optString("status");if("verified".equals(state)){status.setText("Уровни подтверждены MT5 для #"+chosen.optString("ticket")+". Нажми «Обновить» перед следующим изменением.");JSONObject pos=result.optJSONObject("position");if(pos!=null){selected=pos;renderPosition();}tp.setText("");sl.setText("");}else if("rejected".equals(state)){status.setText("Изменение отклонено: "+result.optString("message")+". Обнови позиции.");}else{status.setText("Результат не подтверждён. Не повторяй команду вслепую. Обнови позиции и проверь TP/SL в MT5.");}enabled();});}catch(Exception e){main.post(()->{busy=false;if(!destroyed&&expanded){status.setText("Результат неизвестен: "+safeError(e)+" Обнови позиции и проверь TP/SL в MT5 перед повторной попыткой.");enabled();}});}});
-        }catch(Exception e){status.setText("Введи положительное расстояние, например 0.25. Ноль не удаляет защиту.");}
-    }
-    @Override public void onDestroy(){destroyed=true;if(sizeListener!=null)PanelSizePreferences.prefs(this).unregisterOnSharedPreferenceChangeListener(sizeListener);worker.shutdown();main.removeCallbacksAndMessages(null);if(current!=null){try{wm.removeView(current);}catch(Exception ignored){}current=null;}stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy();}
+    private void setScale(int value){prefs.edit().putInt("ui_scale",PanelDockRules.scale(value)).apply();}
+    private void addButton(LinearLayout box,String label,Runnable click){Button b=new Button(this);b.setText(label);b.setTextSize(14*scale());b.setFilterTouchesWhenObscured(true);b.setOnClickListener(v->click.run());box.addView(b);}
+    @Override public void onConfigurationChanged(android.content.res.Configuration c){super.onConfigurationChanged(c);main.post(()->show(expanded));}
+    @Override public void onDestroy(){destroyed=true;if(recovery!=null)recovery.dispose();cancelHold();main.removeCallbacksAndMessages(null);if(listener!=null)prefs.unregisterOnSharedPreferenceChangeListener(listener);if(current!=null){current.animate().cancel();try{wm.removeView(current);}catch(Exception ignored){}current=null;}stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy();}
 }
