@@ -30,12 +30,13 @@ final class RecoveryPanelView extends LinearLayout {
     private static final Object DISPATCH_LOCK=new Object();
     private JSONObject state;
     private NativeWidgetState nativeState;
-    private final android.content.SharedPreferences pending,attempted;
+    private final android.content.SharedPreferences pending,attempted,resultNotice;
     private final Runnable poll=()->{if(active&&!disposed)fetch(null,null);};
     RecoveryPanelView(Context c){
         super(c);setOrientation(VERTICAL);
         pending=c.getSharedPreferences("recovery-pending-command",0);
         attempted=c.getSharedPreferences("recovery-attempted-ids",0);
+        resultNotice=c.getSharedPreferences("recovery-result-notice",0);
         addView(label("RECOVERY • КОНТРОЛЬ VPS",19));
         addView(label("Режим счёта и доступные действия подтверждаются VPS. В native-режиме кнопки могут отправлять реальные торговые команды.",14));
         addView(label("Настройки расстояний (единицы цены)",17));
@@ -110,6 +111,11 @@ final class RecoveryPanelView extends LinearLayout {
         if(!expected.equals(pending.getString("payload",null)))throw new IllegalStateException("Изменился журнал команды; нужна сверка.");
         if(!pending.edit().clear().commit())throw new IllegalStateException("Не удалось сохранить подтверждение команды.");
     }
+    private void savePartialNotice(JSONObject response,Api api,String context)throws Exception {
+        String text=NativeCommandReceipt.partialMessage(response.getJSONObject("command"));
+        if(text==null||!resultNotice.edit().putString("text",text).putString("url",api.baseUrl()).putString("context",context).commit())
+            throw new IllegalStateException("Частичный результат получен, но не удалось сохранить предупреждение. Нужна сверка.");
+    }
     private String resolvePending(Api api,NativeWidgetState parsed) throws Exception {
         if(parsed==null||!pending.contains("payload")||!api.baseUrl().equals(pending.getString("url",null)))return null;
         String saved=pending.getString("payload",null);JSONObject command=new JSONObject(saved);
@@ -124,6 +130,7 @@ final class RecoveryPanelView extends LinearLayout {
         String id=command.getString("request_id");UUID.fromString(id);
         JSONObject reply=api.request("/api/recovery/commands/"+id,null);
         String outcome=NativePendingResolution.resolved(reply,pending.getString("path",""),command,context);
+        if("partially_applied".equals(outcome))savePartialNotice(reply,api,context);
         if(outcome!=null)clearPending(saved);
         return outcome;
     }
@@ -167,8 +174,17 @@ final class RecoveryPanelView extends LinearLayout {
                     clearPending(saved);
                     throw new IllegalStateException(rejected.getMessage());
                 }
-                if(!sim&&!NativeCommandReceipt.confirmed(reply,body.getString("request_id")))
-                    throw new IllegalStateException("Сервер не подтвердил исход команды. Нужна сверка, не повторяй её.");
+                if(!sim){
+                    String outcome=NativeCommandReceipt.terminalOutcome(reply,body.getString("request_id"));
+                    if(outcome==null&&path.equals("/api/recovery/ranges")&&NativeCommandReceipt.rejectedRangeReceipt(reply,body))outcome="rejected";
+                    if(outcome==null)throw new IllegalStateException("Сервер не подтвердил исход команды. Нужна сверка, не повторяй её.");
+                    if("partially_applied".equals(outcome)){
+                        if(!NativeCommandReceipt.partialMatchesRequest(reply.getJSONObject("command"),body))throw new IllegalStateException("Частичный результат не соответствует диапазонам. Нужна сверка.");
+                        savePartialNotice(reply,api,body.getString("expected_context"));
+                    }
+                    else if("confirmed".equals(outcome)&&path.equals("/api/recovery/ranges")&&!resultNotice.edit().clear().commit())throw new IllegalStateException("Не удалось обновить журнал результата.");
+                    recovered=outcome;
+                }
                 clearPending(saved);
                 }
                 envelope=unwrap(api.request("/api/recovery/state",null));
@@ -178,7 +194,7 @@ final class RecoveryPanelView extends LinearLayout {
             }
             final String resolved=recovered;final NativeWidgetState next=parsed;final JSONObject result=sim?envelope:parsed.copy();
             main.post(()->{if(disposed)return;busy=false;valid=true;nativeState=next;state=result;render();
-                status.setText(pending.contains("payload")?"Исход предыдущей команды неизвестен. Обновление проверяет журнал VPS и не повторяет команду.":"rejected".equals(resolved)?"Сервер подтвердил отклонение предыдущей команды. Можно изменить параметры и подтвердить новую.":"confirmed".equals(resolved)?"Результат предыдущей команды подтверждён журналом VPS.":"/api/recovery/reconcile".equals(path)?"Сверка завершена. Торговые команды не отправлялись; проверь состояние и предупреждения VPS.":next==null?"Симуляция подключена. Реальной торговли нет.":!next.fresh?"Нет свежего подтверждённого состояния MT5. Команды недоступны.":"MT5 подключён. Счёт: "+next.accountTradeMode+(path==null?"":". Ответ на команду получен; состояние обновлено."));
+                status.setText(pending.contains("payload")?"Исход предыдущей команды неизвестен. Обновление проверяет журнал VPS и не повторяет команду.":"partially_applied".equals(resolved)?"Применено частично. Проверь результат каждого диапазона ниже. Повторной отправки нет.":"rejected".equals(resolved)?"Сервер подтвердил отклонение предыдущей команды. Можно изменить параметры и подтвердить новую.":"confirmed".equals(resolved)?"Результат предыдущей команды подтверждён журналом VPS.":"/api/recovery/reconcile".equals(path)?"Сверка завершена. Торговые команды не отправлялись; проверь состояние и предупреждения VPS.":next==null?"Симуляция подключена. Реальной торговли нет.":!next.fresh?"Нет свежего подтверждённого состояния MT5. Команды недоступны.":"MT5 подключён. Счёт: "+next.accountTradeMode+(path==null?"":". Ответ на команду получен; состояние обновлено."));
                 enabled();schedule();});
         }catch(Exception e){main.post(()->{if(disposed)return;busy=false;valid=false;
             if(!summary.getText().toString().startsWith("УСТАРЕВШИЕ"))summary.setText("УСТАРЕВШИЕ ДАННЫЕ • связь не подтверждена\n"+summary.getText());
@@ -207,6 +223,8 @@ final class RecoveryPanelView extends LinearLayout {
         StringBuilder b=new StringBuilder(nativeState==null?"Состояние VPS (демо)\n":"Состояние MT5 • "+nativeState.accountTradeMode+"\n");
         if(nativeState!=null){
             JSONObject snapshot=state.optJSONObject("snapshot");
+            if(snapshot!=null&&resultNotice.getString("url","").equals(SecureConfig.url(getContext()))&&resultNotice.getString("context","").equals(snapshot.optString("context_id"))&&resultNotice.contains("text"))
+                b.append("Последний частичный результат:\n").append(resultNotice.getString("text","")).append("\n\n");
             if(snapshot!=null)b.append("Снимок: ").append(snapshot.optString("observed_at","—")).append("\n");
             JSONArray issues=state.optJSONArray("issues");
             if(issues!=null&&issues.length()>0){b.append("Предупреждения VPS:\n");for(int i=0;i<issues.length();i++)b.append("• ").append(issues.opt(i)).append("\n");}
@@ -217,6 +235,7 @@ final class RecoveryPanelView extends LinearLayout {
         if(ranges==null||ranges.length()==0)b.append("Нет диапазонов. Ожидание.\n");
         else for(int i=0;i<ranges.length();i++){JSONObject r=ranges.optJSONObject(i);if(r==null)continue;
             b.append("\nДиапазон №").append(r.optString("id")).append(" · ").append(r.optString("side")).append(" · ").append(r.optString("price"))
+                 .append(nativeState==null?"":"\nРежим диапазона: "+("cancelled".equals(r.optString("lifecycle"))?"отменён":r.optString("lifecycle","не подтверждён")))
                 .append("\nSL: ").append(r.optString("initial_sl_distance","—")).append(" · повтор: ").append(r.optString("reentry_distance","—"))
                 .append("\nНачальный объём: ").append(r.optString("volume")).append("\n");
             JSONObject totals=state.optJSONObject("totals");JSONObject t=totals==null?null:totals.optJSONObject(r.optString("id"));

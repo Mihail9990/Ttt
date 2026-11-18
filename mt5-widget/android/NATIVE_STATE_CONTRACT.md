@@ -219,3 +219,25 @@ restart behavior still require Android device/instrumented testing.
 Reconciliation confirmation explicitly warns that successful reconciliation may
 allow the VPS to resume the previously configured strategy on later ticks. The
 evidence-only guarantee applies to reconciliation itself, not future strategy activity.
+
+## Terminal partial application
+
+POST and command-status receipts can return completed/partially_applied with
+range_outcomes. The client verifies unique range ids, known per-range statuses and
+exact coverage of the requested range set. This is distinct from full success.
+A matching terminal status can resolve pending but never resends anything.
+The panel persistently displays `Применено частично` with each range's confirmed
+initial send, not-dispatched or rejected outcome. It explicitly separates this
+historical command result from current broker inventory. The warning survives
+polling/restart and is scoped to endpoint and binding context. New fully confirmed
+range submission clears it; cancelled range lifecycle is separately visible.
+`NativePartialResultTest`: 14 checks passed, including missing/duplicate ranges,
+unknown outcomes, mismatched request coverage and context/generation mismatch.
+
+Direct `/ranges` POST rejection is now displayed immediately only when UUID,
+terminal rejected phase/outcome, exact requested range coverage and every
+rejected/not_dispatched status match. Missing, duplicate, confirmed or unknown
+per-range outcomes do not resolve pending through this path. This does not alter
+partial handling. NativeRejectedReceiptTest: 11 checks passed; partial regression
+suite: 17 checks passed. A rejected new submission does not erase the historical
+partial-result warning.

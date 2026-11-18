@@ -9,7 +9,8 @@ final class NativePendingResolution {
         JSONObject c=response.optJSONObject("command");
         if(c==null||!body.getString("request_id").equals(c.opt("request_id")))return null;
         String phase=c.optString("phase"),outcome=c.optString("outcome");
-        if(!((phase.equals("completed")&&outcome.equals("confirmed"))||(phase.equals("rejected")&&outcome.equals("rejected"))))return null;
+        if(!((phase.equals("completed")&&(outcome.equals("confirmed")||(outcome.equals("partially_applied")&&"partially_applied".equals(NativeCommandReceipt.terminalOutcome(response,body.getString("request_id"))))))||(phase.equals("rejected")&&outcome.equals("rejected"))))return null;
+        if(outcome.equals("partially_applied")&&!NativeCommandReceipt.partialMatchesRequest(c,body))return null;
         JSONObject expected=new JSONObject(body.toString());expected.remove("request_id");
         if(path.equals("/api/recovery/ranges"))expected.put("kind","ranges");
         else if(path.equals("/api/recovery/cancel"))expected.put("kind","cancel");
@@ -22,7 +23,7 @@ final class NativePendingResolution {
         if(a==JSONObject.NULL||b==JSONObject.NULL)return a==b;
         if(a instanceof JSONObject&&b instanceof JSONObject){JSONObject x=(JSONObject)a,y=(JSONObject)b;if(x.length()!=y.length())return false;Iterator<String> keys=x.keys();while(keys.hasNext()){String k=keys.next();if(!y.has(k)||!same(x.get(k),y.get(k),k))return false;}return true;}
         if(a instanceof JSONArray&&b instanceof JSONArray){JSONArray x=(JSONArray)a,y=(JSONArray)b;if(x.length()!=y.length())return false;for(int i=0;i<x.length();i++)if(!same(x.get(i),y.get(i),key))return false;return true;}
-        if((a instanceof Number&&b instanceof Number)||key.equals("initial_sl_distance"))try{return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString()))==0;}catch(Exception e){return false;}
+        if((a instanceof Number&&b instanceof Number)||key.equals("initial_sl_distance")||key.equals("reentry_distance")||key.equals("price")||key.equals("volume"))try{return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString()))==0;}catch(Exception e){return false;}
         return a!=null&&a.equals(b);
     }
 }
