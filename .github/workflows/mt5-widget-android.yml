@@ -34,12 +34,6 @@ jobs:
         run: |
           test -s mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Preserve verified APK in private build log
-        run: |
-          sha256sum mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
-          echo MT5_APK_BASE64_BEGIN
-          base64 -w 120 mt5-widget/android/app/build/outputs/apk/debug/app-debug.apk
-          echo MT5_APK_BASE64_END
       - uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
