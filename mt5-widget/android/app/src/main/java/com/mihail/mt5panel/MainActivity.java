@@ -17,7 +17,7 @@ public class MainActivity extends Activity {
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,60,24,24);box.setBackgroundColor(Color.rgb(17,21,27));
         ScrollView scroll=new ScrollView(this);scroll.addView(box);setContentView(scroll);
         TextView title=new TextView(this);title.setText("MT5 • Боковая панель");title.setTextSize(24);box.addView(title);
-        TextView help=new TextView(this);help.setText("Панель RECOVERY поверх Bybit. Эта сборка работает только с симуляцией и не отправляет реальные ордера.\n\nВыбери один или два диапазона, укажи точные цены и направления первичных триггеров.\n\nСвёрнутый значок: свайп внутрь экрана открывает панель, обратный свайп по заголовку закрывает. Удерживай значок и перетащи к левому, правому или нижнему краю.\n\nДля соединения нужны HTTPS и ключ VPS-сервиса.");box.addView(help);
+        TextView help=new TextView(this);help.setText("Панель RECOVERY поверх Bybit. Режим счёта подтверждается сервером. Native-режим может отправлять реальные торговые команды.\n\nВыбери один или два диапазона, укажи точные цены и направления первичных триггеров.\n\nСвёрнутый значок: свайп внутрь экрана открывает панель, обратный свайп по заголовку закрывает. Удерживай значок и перетащи к левому, правому или нижнему краю.\n\nДля соединения нужны HTTPS и ключ VPS-сервиса.");box.addView(help);
         addSizeControls(box);
         EditText url=new EditText(this);url.setHint("https://your-server.example");url.setSingleLine();url.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);url.setText(SecureConfig.url(this));box.addView(url);
         EditText token=new EditText(this);token.setHint("Ключ доступа (оставь пустым, если сохранён)");token.setSingleLine();token.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);box.addView(token);
@@ -28,8 +28,8 @@ public class MainActivity extends Activity {
             if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7);
             startForegroundService(new Intent(this,PanelService.class));status.setText("Панель включена. Удерживай значок для перемещения; свайп от края открывает.");
         });
-        button(box,"Остановить панель",()->{stopService(new Intent(this,PanelService.class));status.setText("Панель остановлена. Ордера и позиции не изменены.");});
-        status=new TextView(this);status.setText("Прототип: только симуляция RECOVERY. Реальная торговля недоступна.");box.addView(status);
+        button(box,"Остановить панель",()->{stopService(new Intent(this,PanelService.class));status.setText("Панель остановлена. VPS продолжает работу. Уже отправленная команда может исполниться; остановка панели её не отменяет.");});
+        status=new TextView(this);status.setText("Перед действием проверь сервер, режим счёта и параметры. Остановка панели не останавливает стратегию на VPS.");box.addView(status);
     }
     private void addSizeControls(LinearLayout box){
         TextView heading=new TextView(this);heading.setText("Размер панели");heading.setTextSize(20);box.addView(heading);

@@ -3,3 +3,6 @@ local.properties
 **/build/
 *.jks
 *.keystore
+
+validation/
+PanelService-before-gestures.java.txt

@@ -1,0 +1,68 @@
+{
+  "widget": {
+    "schema_version": 1,
+    "mode": "native",
+    "account_trade_mode": "unknown",
+    "snapshot": {
+      "status": "fresh",
+      "observed_at": "2026-11-18T19:23:04.251006+00:00",
+      "generation": "92cd37d86ec747b78cb501cafe80a991",
+      "symbol": "XAUUSD.s",
+      "context_id": "1c9e72da94156e80be24f61fbb1bafada778dc5198affb0da9ec49f2c3e9c68e"
+    },
+    "settings": {
+      "initial_sl_distance": "0.70",
+      "reentry_distance": "0.70"
+    },
+    "ranges": [
+      {
+        "id": "1",
+        "price": "4000",
+        "side": "BUY",
+        "volume": "0.01",
+        "lifecycle": "active",
+        "value_source": "configured"
+      }
+    ],
+    "positions": [
+      {
+        "ticket": 188,
+        "identifier": 88,
+        "magic": 123,
+        "symbol": "XAUUSD.s",
+        "side": "BUY",
+        "entry": "4000.0",
+        "volume": "0.01",
+        "sl": "3999.3",
+        "tp": "0.0",
+        "price": "4000.0",
+        "range_id": "1",
+        "mapping_status": "verified"
+      }
+    ],
+    "orders": [],
+    "loss_history": [],
+    "totals": {
+      "1": {
+        "realized_net": "0",
+        "closed_positions": 0,
+        "classification_pending_count": 0,
+        "full_sl_count": 0,
+        "gross_negative_closed_net": "0"
+      }
+    },
+    "executor_ready": true,
+    "reconciliation_required": false,
+    "issues": [],
+    "capabilities": {
+      "set_ranges": false,
+      "cancel_ranges": false,
+      "close_cancel_range_ids": [
+        "1"
+      ],
+      "reasons": [
+        "open_positions_disable_set_and_cancel"
+      ]
+    }
+  }
+}
