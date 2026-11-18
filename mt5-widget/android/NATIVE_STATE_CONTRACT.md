@@ -198,3 +198,24 @@ without replacing the protocol with a stronger server-side anti-replay design.
 Actual server 401 and 422 fixtures passed `NativeRejectionFixtureTest` (2 cases),
 retained in tests/fixtures/native-rejections.json. This checks Python/Java wire
 compatibility, not Android network fault behavior.
+
+## Explicit evidence-only reconciliation control
+
+The panel has `Сверить журнал VPS (без повторной отправки)`. It is separate from trade command
+submission and is available with a parsed native connection even if trading
+pending exists. Confirmation binds its immutable connection and expected context /
+generation. Its POST goes only to `/api/recovery/reconcile`, which the server
+implements using evidence reads and local journal updates, never broker sends.
+The client does not overwrite trading pending or replay its original POST.
+A subsequent fresh state and GET original UUID status are required to resolve
+pending. HTTP200 from reconciliation alone is not terminal proof. Unresolved
+issues remain visible in the panel alongside the snapshot timestamp.
+
+Final local checks for this iteration: all Java application/test sources compile;
+1326 assertions across eight test mains pass, plus actual server projection and
+401/422 cross-language fixtures. Network faults, lifecycle races and service
+restart behavior still require Android device/instrumented testing.
+
+Reconciliation confirmation explicitly warns that successful reconciliation may
+allow the VPS to resume the previously configured strategy on later ticks. The
+evidence-only guarantee applies to reconciliation itself, not future strategy activity.

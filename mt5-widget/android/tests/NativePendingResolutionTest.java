@@ -16,6 +16,9 @@ public class NativePendingResolutionTest {
         c.put("outcome","confirmed");payload.put("expected_generation","other");check(NativePendingResolution.resolved(reply,path,body,"bound")==null);payload.put("expected_generation",JSONObject.NULL);
         payload.getJSONArray("ranges").getJSONObject(0).put("price",4001);check(NativePendingResolution.resolved(reply,path,body,"bound")==null);
         check(NativePendingResolution.resolved(reply,"/wrong",body,"bound")==null);
+        // A reconcile response (state only, no original terminal receipt) never resolves a trade.
+        check(NativePendingResolution.resolved(new JSONObject().put("context_id","bound").put("widget",new JSONObject()),path,body,"bound")==null);
+        check(NativePendingResolution.resolved(reply,"/api/recovery/reconcile",body,"bound")==null);
         System.out.println("NativePendingResolutionTest passed: "+n);
     }
 }

@@ -24,7 +24,7 @@ final class RecoveryPanelView extends LinearLayout {
     private final EditText initialSl,reentry;
     private boolean distancesEdited,distancesLoaded;
     private final LinearLayout second;
-    private final Button place,cancel,close1,close2,refresh;
+    private final Button place,cancel,close1,close2,refresh,reconcile;
     private boolean two,busy,valid,active;
     private volatile boolean disposed;
     private static final Object DISPATCH_LOCK=new Object();
@@ -52,6 +52,7 @@ final class RecoveryPanelView extends LinearLayout {
         addView(range(0));second=range(1);addView(second);second.setVisibility(GONE);
         place=button(this,"Подтвердить диапазоны",this::placeRanges);
         refresh=button(this,"Обновить состояние",()->fetch(null,null));
+        reconcile=button(this,"Сверить журнал VPS (без повторной отправки)",()->command("/api/recovery/reconcile",new JSONObject()));
         cancel=button(this,"Отменить диапазоны и ждать",()->command("/api/recovery/cancel",new JSONObject()));
         close1=button(this,"Закрыть позицию и отменить №1",()->command("/api/recovery/ranges/1/close-cancel",new JSONObject()));
         close2=button(this,"Закрыть позицию и отменить №2",()->command("/api/recovery/ranges/2/close-cancel",new JSONObject()));
@@ -82,12 +83,13 @@ final class RecoveryPanelView extends LinearLayout {
         }catch(Exception e){status.setText("Введи положительные цену и объём для каждого выбранного диапазона.");}
     }
     private void command(String path,JSONObject body){
-        if(!valid||busy||pending.contains("payload"))return;
+        if(!valid||busy||(pending.contains("payload")&&!path.equals("/api/recovery/reconcile")))return;
+        if(path.equals("/api/recovery/reconcile")&&nativeState==null)return;
         try{body.put("request_id",UUID.randomUUID().toString());
             final Api confirmedApi=new Api(getContext());
             if(nativeState!=null){JSONObject snapshot=nativeState.copy().getJSONObject("snapshot");body.put("expected_context",snapshot.getString("context_id")).put("expected_generation",snapshot.get("generation"));}
-            android.app.AlertDialog confirm=new android.app.AlertDialog.Builder(getContext()).setTitle(nativeState==null?"Команда симуляции":"Подтвердить торговую команду")
-                .setMessage((path.endsWith("/ranges")?"Выставить новые диапазоны":path.endsWith("/cancel")?"Отменить диапазоны":"Закрыть позицию и отменить диапазон №"+(path.contains("/1/")?"1":"2"))+"\nСервер: "+confirmedApi.baseUrl()+"\nСчёт: "+(nativeState==null?"симуляция":nativeState.accountTradeMode)+"\n"+body.toString())
+            android.app.AlertDialog confirm=new android.app.AlertDialog.Builder(getContext()).setTitle(path.equals("/api/recovery/reconcile")?"Сверить журнал VPS":nativeState==null?"Команда симуляции":"Подтвердить торговую команду")
+                .setMessage((path.equals("/api/recovery/reconcile")?"Проверить имеющиеся доказательства MT5. Без открытия, закрытия или повторной отправки ордеров. Неопределённый исход может остаться неразрешённым. После успешной сверки VPS может продолжить ранее настроенную стратегию.":path.endsWith("/ranges")?"Выставить новые диапазоны":path.endsWith("/cancel")?"Отменить диапазоны":"Закрыть позицию и отменить диапазон №"+(path.contains("/1/")?"1":"2"))+"\nСервер: "+confirmedApi.baseUrl()+"\nСчёт: "+(nativeState==null?"симуляция":nativeState.accountTradeMode)+"\n"+body.toString())
                 .setNegativeButton("Назад",null).setPositiveButton("Подтвердить",(dialog,which)->fetch(path,body,confirmedApi)).create();
             if(!(getContext() instanceof android.app.Activity))confirm.getWindow().setType(android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
             confirm.show();
@@ -98,6 +100,7 @@ final class RecoveryPanelView extends LinearLayout {
     private static boolean simulation(JSONObject s){return "simulation".equals(s.optString("mode"))&&s.has("live_trading")&&!s.optBoolean("live_trading",true);}
     private static JSONObject unwrap(JSONObject result){JSONObject s=result.optJSONObject("state");return s==null?result:s;}
     private boolean allowed(NativeWidgetState n,String path){
+        if(path.equals("/api/recovery/reconcile"))return true; // Evidence-only; trading capabilities remain unchanged.
         if(path.endsWith("/ranges"))return n.setRanges;
         if(path.endsWith("/cancel"))return n.cancelRanges;
         return n.closeCancelRangeIds.contains(path.contains("/ranges/1/")?"1":"2");
@@ -126,7 +129,7 @@ final class RecoveryPanelView extends LinearLayout {
     }
     private void fetch(String path,JSONObject body,Api confirmedApi){
         if(disposed||busy)return;
-        if(path!=null&&pending.contains("payload")){status.setText("Исход предыдущей команды не подтверждён. Новые команды не отправляются.");return;}
+        if(path!=null&&!path.equals("/api/recovery/reconcile")&&pending.contains("payload")){status.setText("Исход предыдущей команды не подтверждён. Новые команды не отправляются.");return;}
         main.removeCallbacks(poll);busy=true;valid=false;enabled();status.setText(path==null?"Проверяю состояние…":"Проверяю возможность команды…");
         worker.execute(()->{synchronized(DISPATCH_LOCK){try{
             if(disposed)return;
@@ -137,7 +140,7 @@ final class RecoveryPanelView extends LinearLayout {
             String recovered=path==null?resolvePending(api,parsed):null;
             if(path!=null){
                 if(disposed)throw new IllegalStateException("Панель остановлена до отправки команды.");
-                if(pending.contains("payload"))throw new IllegalStateException("Другая команда ожидает сверки.");
+                if(pending.contains("payload")&&!path.equals("/api/recovery/reconcile"))throw new IllegalStateException("Другая команда ожидает сверки.");
                 if(!api.sameConfiguration(getContext()))throw new IllegalStateException("Настройки соединения изменились. Подтверди действие заново.");
                 if(body.has("expected_context")){
                     if(parsed==null)throw new IllegalStateException("Режим сервера изменился.");
@@ -146,6 +149,10 @@ final class RecoveryPanelView extends LinearLayout {
                 }else if(!sim)throw new IllegalStateException("Режим сервера изменился.");
                 if(parsed!=null&&!allowed(parsed,path))throw new IllegalStateException("Сервер не разрешает это действие в текущем состоянии.");
                 if(sim&&(path.endsWith("close-cancel")||!envelope.optBoolean("can_cancel_ranges",false)))throw new IllegalStateException("Команда симуляции недоступна.");
+                if(path.equals("/api/recovery/reconcile")){
+                    if(disposed)throw new IllegalStateException("Панель остановлена до сверки.");
+                    api.request(path,body); // Explicit evidence-only endpoint; NEVER replay the pending trading POST.
+                }else{
                 String saved=body.toString(),requestId=body.getString("request_id");
                 if(attempted.contains(requestId))throw new IllegalStateException("Этот идентификатор уже использован. Повторная отправка запрещена.");
                 if(!attempted.edit().putBoolean(requestId,true).commit())throw new IllegalStateException("Не удалось сохранить защиту от повторной отправки.");
@@ -163,13 +170,15 @@ final class RecoveryPanelView extends LinearLayout {
                 if(!sim&&!NativeCommandReceipt.confirmed(reply,body.getString("request_id")))
                     throw new IllegalStateException("Сервер не подтвердил исход команды. Нужна сверка, не повторяй её.");
                 clearPending(saved);
+                }
                 envelope=unwrap(api.request("/api/recovery/state",null));
                 if(sim!=simulation(envelope))throw new IllegalStateException("Сервер сменил режим. Обнови состояние.");
                 parsed=sim?null:NativeWidgetState.parse(envelope,System.currentTimeMillis());
+                if(path.equals("/api/recovery/reconcile"))recovered=resolvePending(api,parsed);
             }
             final String resolved=recovered;final NativeWidgetState next=parsed;final JSONObject result=sim?envelope:parsed.copy();
             main.post(()->{if(disposed)return;busy=false;valid=true;nativeState=next;state=result;render();
-                status.setText(pending.contains("payload")?"Исход предыдущей команды неизвестен. Обновление проверяет журнал VPS и не повторяет команду.":"rejected".equals(resolved)?"Сервер подтвердил отклонение предыдущей команды. Можно изменить параметры и подтвердить новую.":"confirmed".equals(resolved)?"Результат предыдущей команды подтверждён журналом VPS.":next==null?"Симуляция подключена. Реальной торговли нет.":!next.fresh?"Нет свежего подтверждённого состояния MT5. Команды недоступны.":"MT5 подключён. Счёт: "+next.accountTradeMode+(path==null?"":". Ответ на команду получен; состояние обновлено."));
+                status.setText(pending.contains("payload")?"Исход предыдущей команды неизвестен. Обновление проверяет журнал VPS и не повторяет команду.":"rejected".equals(resolved)?"Сервер подтвердил отклонение предыдущей команды. Можно изменить параметры и подтвердить новую.":"confirmed".equals(resolved)?"Результат предыдущей команды подтверждён журналом VPS.":"/api/recovery/reconcile".equals(path)?"Сверка завершена. Торговые команды не отправлялись; проверь состояние и предупреждения VPS.":next==null?"Симуляция подключена. Реальной торговли нет.":!next.fresh?"Нет свежего подтверждённого состояния MT5. Команды недоступны.":"MT5 подключён. Счёт: "+next.accountTradeMode+(path==null?"":". Ответ на команду получен; состояние обновлено."));
                 enabled();schedule();});
         }catch(Exception e){main.post(()->{if(disposed)return;busy=false;valid=false;
             if(!summary.getText().toString().startsWith("УСТАРЕВШИЕ"))summary.setText("УСТАРЕВШИЕ ДАННЫЕ • связь не подтверждена\n"+summary.getText());
@@ -187,6 +196,7 @@ final class RecoveryPanelView extends LinearLayout {
         cancel.setEnabled(ready&&(nativeState!=null?nativeState.cancelRanges:state!=null&&state.optBoolean("can_cancel_ranges",false)));
         close1.setEnabled(ready&&nativeState!=null&&nativeState.closeCancelRangeIds.contains("1"));
         close2.setEnabled(ready&&nativeState!=null&&nativeState.closeCancelRangeIds.contains("2"));refresh.setEnabled(!busy);
+        reconcile.setEnabled(valid&&!busy&&nativeState!=null);
     }
     private void render(){
         JSONObject settings=state.optJSONObject("settings");
@@ -195,6 +205,12 @@ final class RecoveryPanelView extends LinearLayout {
             distancesLoaded=true;
         }
         StringBuilder b=new StringBuilder(nativeState==null?"Состояние VPS (демо)\n":"Состояние MT5 • "+nativeState.accountTradeMode+"\n");
+        if(nativeState!=null){
+            JSONObject snapshot=state.optJSONObject("snapshot");
+            if(snapshot!=null)b.append("Снимок: ").append(snapshot.optString("observed_at","—")).append("\n");
+            JSONArray issues=state.optJSONArray("issues");
+            if(issues!=null&&issues.length()>0){b.append("Предупреждения VPS:\n");for(int i=0;i<issues.length();i++)b.append("• ").append(issues.opt(i)).append("\n");}
+        }
         if(settings!=null)b.append("Настройки сервера: SL ").append(settings.optString("initial_sl_distance"))
             .append(" · повторный триггер ").append(settings.optString("reentry_distance")).append("\n");
         JSONArray ranges=state.optJSONArray("ranges");
